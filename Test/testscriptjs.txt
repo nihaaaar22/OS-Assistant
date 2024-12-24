@@ -1,0 +1,24 @@
+// Simple data manipulation example
+
+// Sample data array
+const numbers = [10, 20, 30, 40, 50];
+
+// Function to calculate the sum of an array
+function calculateSum(arr) {
+    return arr.reduce((acc, num) => acc + num, 0);
+}
+
+// Function to calculate the average of an array
+function calculateAverage(arr) {
+    const sum = calculateSum(arr);
+    return sum / arr.length;
+}
+
+// Perform calculations
+const sum = calculateSum(numbers);
+const average = calculateAverage(numbers);
+
+// Output results
+console.log("Numbers:", numbers);
+console.log("Sum:", sum);
+console.log("Average:", average);
