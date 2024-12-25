@@ -4,7 +4,7 @@ import os
 # Add the Src directory to the Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../Src')))
 
-from Executors.js_executor import JavaScriptExecutor  # Assuming js_executor handles Node.js execution
+from Env.js_executor import JavaScriptExecutor  # Assuming js_executor handles Node.js execution
 
 def read_test_script(filename):
     """Read the content of a test script file"""

@@ -4,7 +4,7 @@ import os
 # Add the Src directory to the Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../Src')))
 
-from Executors.python_executor import PythonExecutor
+from Env.python_executor import PythonExecutor
 
 def read_test_script(filename):
     """Read the content of a test script file"""
