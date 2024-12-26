@@ -1,7 +1,8 @@
 # Open Co-Pilot
+![Open Co- Pilot-2](https://github.com/user-attachments/assets/c27a9987-d296-40a3-b312-a47ea0e48432)
 
 
-![Open Co- Pilot](https://github.com/user-attachments/assets/434f4ce1-480c-4bae-a05a-36c7532cec54)
+
 
 Agents are the future and we are building it in the open.
 This is your Co-Pilot. We want it to be your companion in getting things done. 
