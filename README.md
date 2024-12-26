@@ -6,7 +6,7 @@
 Agents are the future and we are building it in the open.
 This is your Co-Pilot. We want it to be your companion in getting things done. 
 
-With the right amount of system context, tools and execution environment language models can do wonders
+With the right amount of system context, tools and execution environment, language models can do wonders
 
 Stages used in each task: 
 1. Planning
