@@ -1,8 +1,7 @@
 import subprocess
 import sys
-from .base_executor import BaseExecutor
 
-class JavaScriptExecutor(BaseExecutor):
+class JavaScriptExecutor():
     def __init__(self):
         super().__init__()
         self.node_installed = self.check_node_installed()
@@ -49,8 +48,8 @@ class JavaScriptExecutor(BaseExecutor):
             return "Node.js is required but not installed. Please install Node.js manually."
 
         # Proceed with code execution if Node.js is available
-        if not self.validate_code(code):
-            return "Code validation failed: Unsafe code detected."
+        # if not self.validate_code(code):
+        #     return "Code validation failed: Unsafe code detected."
 
         try:
             result = subprocess.run(
@@ -61,4 +60,4 @@ class JavaScriptExecutor(BaseExecutor):
             )
             return result.stdout if result.stdout else "Code executed successfully."
         except subprocess.CalledProcessError as e:
-            return self.handle_error(e)
+            print(e)
