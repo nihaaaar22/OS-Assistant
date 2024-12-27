@@ -3,7 +3,7 @@
 #currently i am passing in the query in the planner stage itself. However need another
 #utils module that will take query args along with other args such as file path for local files
 #for now the planner will itself call the executor but later it needs to be done by an 
-#external orchestorator. eventually it will be efficient
+#external orchestorator. eventually it will be efficiengit 
 
 class planner():
     def __init__(self,query):
