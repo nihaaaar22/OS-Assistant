@@ -12,7 +12,7 @@ from Env.js_executor import JavaScriptExecutor
  #the context will be provided by the planner. For maintaining context between tasks the 
  #base agent will not be instantiated for each task. Instead the intermediate stage output will be
  #stored in the executor only. 
- 
+
 class executor(base_agent):
 
     # def __init__(self, prompt, tool_manager, max_iter=3):
