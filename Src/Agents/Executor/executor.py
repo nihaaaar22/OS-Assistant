@@ -26,7 +26,7 @@ class executor(base_agent):
 
     def temp(self):
         env = base_env.create_environment("python")
-        file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../Test/testscript2.txt"))  # Relative path
+        file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../Test/testscript1.txt"))  # Relative path
         with open(file_path, "r") as file:
             code = file.read()
             env.execute(code)
@@ -58,7 +58,7 @@ class executor(base_agent):
         pass
 
 e1 = executor()
-e1.temp2()
+e1.temp()
 
     
 
