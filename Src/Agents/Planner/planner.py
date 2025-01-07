@@ -1,3 +1,9 @@
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
+
+from Src.llm_interface.llm import MistralModel
+
 
 
 #module for planning i.e. breaking down the tasks into multiple subtasks. The tasks are stored
@@ -12,21 +18,22 @@
 class Planner():
 
     def __init__(self,user_query):
-        planner_prompt_init()
+        self.planner_prompt_init()
+        self.llm = MistralModel()
 
         self.message = [
-            {"role":"system","content":self.planner_prompt()},
+            {"role":"system","content":self.planner_prompt},
             {"role":"user","content":user_query}
         ]
         
 
-    def planner_prompt_init():
+    def planner_prompt_init(self):
 
         output_format_eg = r"[{id:,description:,prompt_to_taskexecutor:,expected_output:,tool_use:}]"
 
         available_tools = r"[1.Google Search, 2. Website Scraper]"
 
-        #os system details = 
+        # system details = 
         
 
         self.planner_prompt = f"""You are an expert at breaking down a task into subtasks. You are helping in
@@ -48,8 +55,19 @@ class Planner():
         
         """
 
-    def run():
-        pass
+    def run(self):
+
+        response = ""
+        stream = self.llm.chat(self.message)
+        
+        for chunk in stream:
+            content = chunk.data.choices[0].delta.content
+            print(content, end="")  # Print in real-time
+            response += content
+
+    
+
+        
 
         
 
@@ -60,5 +78,14 @@ class Planner():
         pass
 
     
+#temp execution code
+user_query = "Find the latest news on artificial intelligence and summarize it."
+
+    # Instantiate the Planner with the user query
+planner = Planner(user_query)
+
+    # Run the Planner to process the query
+planner.run()
+
 
     

@@ -13,27 +13,26 @@ from mistralai import Mistral
 
 model = "mistral-large-latest"
 
-class Mistral:
-    client = Mistral(api_key=api_key)
+class MistralModel:
+    def __init__(self):
+        self.client = Mistral(api_key=api_key)
 
-    stream_response = client.chat.stream(
-        model = model,
-        messages = [
-            {
-                "role": "user",
-                "content": "hi",
-            },
-        ]
-    )
+    def chat(self,messages):
 
-    full_response = ""
+        stream_response = self.client.chat.stream(
+            model = model,
+            messages=messages
+        )
 
-    # Iterate over the stream and store chunks
-    for chunk in stream_response:
-        content = chunk.data.choices[0].delta.content
-        print(content, end="")  # Print in real-time
-        full_response += content  # Append to the full response
+        return stream_response
 
-    # Now `full_response` contains the complete response
-    # Perform operations on the complete response
-    print("\n\nFull response captured:")
+
+        # # Iterate over the stream and store chunks
+        # for chunk in stream_response:
+        #     content = chunk.data.choices[0].delta.content
+        #     print(content, end="")  # Print in real-time
+        #     full_response += content  # Append to the full response
+
+        # # Now `full_response` contains the complete response
+        # # Perform operations on the complete response
+        # print("\n\nFull response captured:")
