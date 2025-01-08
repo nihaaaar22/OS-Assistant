@@ -1,5 +1,6 @@
 import sys
 import os
+import json
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
 
 from Src.llm_interface.llm import MistralModel
@@ -29,11 +30,12 @@ class Planner():
 
     def planner_prompt_init(self):
 
-        output_format_eg = r"[{id:,description:,prompt_to_taskexecutor:,expected_output:,tool_use:}]"
+        output_format_eg = r"[{id:,description:,prompt_to_taskexecutor:,expected_result:,tool_use:}]"
 
         available_tools = r"[1.Google Search, 2. Website Scraper]"
 
-        # system details = 
+
+        # system details = pwd,os version,
         
 
         self.planner_prompt = f"""You are an expert at breaking down a task into subtasks. You are helping in
@@ -50,12 +52,18 @@ class Planner():
         cannot proceed without the help of a language model.
         Tasks example : Go out in the internet and find me the latest news on ai 
 
-        3. Produce the output only as a list of subtasks in the json list format. Example : {output_format_eg}
+        3. Produce the output only as a list of subtasks in the json list format.If
+         no tool is needed then tool_use field should be empty.There should be no
+         other unnecessary text in the output. Example : {output_format_eg}
+
+        important note: If a function or tool is NOT explicitly specified, do not make up functions. Use training data to respond instead.
+
 
         
         """
 
     def run(self):
+    
 
         response = ""
         stream = self.llm.chat(self.message)
@@ -65,21 +73,26 @@ class Planner():
             print(content, end="")  # Print in real-time
             response += content
 
-    
+
+        # data = json.loads(self.converttojson(response))
+
+        # print(data)
+
+
+
+    def converttojson(self,input_string):
+
+        cleaned_string = input_string.strip().removeprefix("'''json").removesuffix("'''").strip()
+        return cleaned_string
 
         
-
-        
-
-    def decomposetasks():
-        pass
 
     def callexecutor():
         pass
 
     
 #temp execution code
-user_query = "Find the latest news on artificial intelligence and summarize it."
+user_query = "What is the current inr to dollar conversion rate"
 
     # Instantiate the Planner with the user query
 planner = Planner(user_query)
