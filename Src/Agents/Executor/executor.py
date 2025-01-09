@@ -40,7 +40,7 @@ class executor():
 
         self.individual_task_prompt = """The current task details is given here in the JSON string format
         {task_details}. The details of tools mentioned in the task are {tools_details}.You have to use the 
-        tools and using multiple iterations you have to active the desired result i.e. {task_details.expectedresult}
+        tools and using multiple iterations you have to achieve the desired result i.e. {task_details.expectedresult}
     """
 
 
@@ -68,7 +68,8 @@ class executor():
 
 
     def run_task(task):
-        #run the task return the result to the llm. if its okay then llm should return ok 
+        #run the task return the result to the llm. if its okay 
+        # and no other task needs to be done then llm should return ok 
         #else should perform more iterations. 
 
         pass
