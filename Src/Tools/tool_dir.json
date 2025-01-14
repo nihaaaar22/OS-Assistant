@@ -1,10 +1,9 @@
 [
     {
-     "name":"",
-     "details":"",
+     "name":"web_loader",
+     "summary":"Scrappes the web page and returns it",
      "arguments":{
-
+        "url":"url of the website/webpage to be scrapped"
      }
-
     }
 ]
