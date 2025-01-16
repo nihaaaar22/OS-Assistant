@@ -24,6 +24,7 @@ class executor():
         self.user_prompt = user_prompt
         self.executor_prompt_init()
         self.llm = MistralModel()
+        self.max_iter=3
 
         self.message = [
             {"role":"system","content":self.system_prompt}]
@@ -64,22 +65,6 @@ class executor():
             # If the delimiters are not found, return None
             return None
 
-    # def call_tool(self, tool_name, *args, **kwargs):
-    # """
-    # Calls the specified tool with the provided input parameters.
-    # *args: Positional arguments for the tool.
-    # **kwargs: Keyword arguments for the tool.
-    # """
-    # if tool_name in self.tool_manager:
-    #     tool = self.tool_manager[tool_name]
-    #     try:
-    #         # Call the tool with *args and **kwargs
-    #         output = tool(*args, **kwargs)
-    #         return output
-    #     except Exception as e:
-    #         return f"Tool Error: {str(e)}"
-    # else:
-    #     return f"Tool '{tool_name}' not found."
 
     def executor_prompt_init(self):
         """Initializes the system and task-specific prompts for the LLM."""
@@ -118,6 +103,9 @@ class executor():
             print(content, end="")  # Print in real-time
             response += content
 
+        assistant_message = {"role": "assistant", "content": response}
+        self.message.append(assistant_message)
+
         return response
 
     def run(self):
@@ -128,6 +116,7 @@ class executor():
             # Run each task until the LLM signals that it is done
             self.run_task(task, tools_details)
             break
+
 
     def run_task(self, task, tools_details):
         """Executes an individual task until the LLM certifies that it is done."""
@@ -143,59 +132,40 @@ class executor():
 
         response = self.run_inference()
 
-        tool_call = self.parse_tool_call(response)
+        iteration = 0
+        task_done = False
 
-        
+        while iteration < self.max_iter and not task_done:
+          
+            tool_call = self.parse_tool_call(response)
 
+            if tool_call:
                 # Call the tool with the extracted input parameters
-        if tool_call:
-                # Call the tool with the extracted input parameters
-            try:
-                tool_output =tool_manager.call_tool(tool_call["tool_name"], **tool_call["input"])
-            except ValueError as e:
-                tool_output = str(e)
+                try:
+                    tool_output =tool_manager.call_tool(tool_call["tool_name"], **tool_call["input"])
+                except ValueError as e:
+                    tool_output = str(e)
 
                 # Append the tool output to the message history for context
-            self.message.append({"role": "system", "content": f"Tool Output: {tool_output}"})
-
-            self.run_inference()
-        
-    
-
-
-
-
-
-
-        # iteration = 0
-        # task_done = False
-
-        # while iteration < self.max_iter and not task_done:
-        #     # Format the task-specific prompt
-        #     task_message = self.individual_task_prompt.format(
-        #         task_details=task["prompt_to_taskexecutor"],
-        #         expected_output=task["expected_output"],
-        #         tools_details=tools_details
-        #     )
+                self.message.append({"role": "user", "content": f"Tool Output: {tool_output}"})
 
             
 
-        #     # Append the task message to the message history
-        #     self.message.append({"role": "planner", "content": task_message})
+            # Check if the task is done
+            if "TASK_DONE" in response:
+                print("Task completed successfully.")
+                task_done = True
+            else:
+                print("Task not yet completed. Running another iteration...")
+                if(not tool_call):
+                    self.message.append({"role":"user","content":"Continue with completing the task."})
+                else:
+                    self.message.append({"role":"user","content":"Above is the tool response of the tool that you requested.Continute with completing the task"})
+                response = self.run_inference()
+                iteration += 1
 
-        #     # Run inference with the updated message
-        #     response = self.run_inference()
-
-        #     # Check if the task is done
-        #     if "TASK_DONE" in response:
-        #         print("Task completed successfully.")
-        #         task_done = True
-        #     else:
-        #         print("Task not yet completed. Running another iteration...")
-        #         iteration += 1
-
-        # if not task_done:
-        #     print(f"Task could not be completed within {self.max_iter} iterations.")
+        if not task_done:
+            print(f"Task could not be completed within {self.max_iter} iterations.")
 
 
 
@@ -246,21 +216,23 @@ class executor():
 planner_output =[
   {
     "id": 1,
-    "description": "Identify the latest INR to USD conversion rate.",
-    "prompt_to_taskexecutor": "Find the latest INR to USD conversion rate.",
-    "expected_output": "The latest INR to USD conversion rate.",
-    "tool_use": "Google Search"
-  },
-  {
-    "id": 2,
-    "description": "Extract the conversion rate from the search results.",
-    "prompt_to_taskexecutor": "Extract the INR to USD conversion rate from the search results",
-    "expected_output": "The extracted INR to USD conversion rate.",
-    "tool_use": ""
+    "description": "Find the latest new technologies and updates on Ai",
+    "prompt_to_taskexecutor": "Find the latest new technologies and updates on Ai by searching it on the web",
+    "expected_output": "The latest findings should be presented in a well defined and concise report",
+    "tool_use": "Web Search"
   }
+  #,
+#   {
+#     "id": 2,
+#     "description": "Extract the conversion rate from the search results.",
+#     "prompt_to_taskexecutor": "Extract the INR to USD conversion rate from the search results",
+#     "expected_output": "The extracted INR to USD conversion rate.",
+#     "tool_use": ""
+#   }
 ]
 
 user_query = "What is the current inr to dollar conversion rate"
+# user_query = "What is the latest news on Ai. Cu"
 e1 = executor(user_query,planner_output)
 e1.run()
 

@@ -49,17 +49,18 @@ class Planner():
         2. Break down the tasks if required depending on the complexity and return the steps(to determine in what 
         way the output will be). The steps will be sufficiently large so that one step output is required for the input
         of the next step. The steps will be run sequentially. A new step will be produced if and only if the current step 
-        cannot proceed without the help of a language model.
-        Tasks example : Go out in the internet and find me the latest news on ai 
+        cannot proceed without the help of a language model. Optimize for the least amount of steps.
+        Task example : Go out in the internet and find me the latest news on ai. In this example the tasks would be divided
+        into two stages i.e. 1) search for the news on ai and  2)present the news in a readable format
 
         3. Produce the output only as a list of subtasks in the json list format.If
          no tool is needed then tool_use field should be empty.There should be no
-         other unnecessary text in the output. Example : {output_format_eg}
+         other unnecessary text in the output. Output format : {output_format_eg}.
+        
+        There should be no ambiguity. Each step should be well defined so that the executor exactly knows what output to produce.
 
         important note: If a function or tool is NOT explicitly specified, do not make up functions. Use training data to respond instead.
 
-
-        
         """
 
     def run(self):
