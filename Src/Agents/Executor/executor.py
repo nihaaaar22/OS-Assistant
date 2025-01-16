@@ -110,12 +110,11 @@ class executor():
 
     def run(self):
         """Executes all tasks provided by the planner."""
-        tools_details = self.get_tool_dir()  # Get the tools details from the JSON file
-
+        tools_details = self.get_tool_dir()
+        
         for task in self.planner_prompt:
-            # Run each task until the LLM signals that it is done
+            # This will complete fully before moving to the next task
             self.run_task(task, tools_details)
-            break
 
 
     def run_task(self, task, tools_details):
@@ -216,19 +215,20 @@ class executor():
 planner_output =[
   {
     "id": 1,
-    "description": "Find the latest new technologies and updates on Ai",
-    "prompt_to_taskexecutor": "Find the latest new technologies and updates on Ai by searching it on the web",
-    "expected_output": "The latest findings should be presented in a well defined and concise report",
-    "tool_use": "Web Search"
-  }
-  #,
-#   {
-#     "id": 2,
-#     "description": "Extract the conversion rate from the search results.",
-#     "prompt_to_taskexecutor": "Extract the INR to USD conversion rate from the search results",
-#     "expected_output": "The extracted INR to USD conversion rate.",
-#     "tool_use": ""
-#   }
+    "description": "Find the latest trends in AI.",
+    "prompt_to_taskexecutor": "Search the web for the latest trends in AI, including breakthroughs, applications, and future predictions.",
+    "expected_output": "A list of the latest trends in AI.",
+    "next_task": "Organize the trends into categories.",
+    "tool_use": "web_loader"
+  },
+  {
+    "id": 2,
+    "description": "Organize the trends into categories.",
+    "prompt_to_taskexecutor": "Organize the AI trends into categories such as 'Breakthroughs', 'Applications', and 'Future Predictions'.",
+    "expected_output": "A categorized list of AI trends.",
+    "next_task": "Summarize the key insights from the trends.",
+    "tool_use": ""
+  },
 ]
 
 user_query = "What is the current inr to dollar conversion rate"
