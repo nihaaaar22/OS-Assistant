@@ -32,7 +32,7 @@ class Planner():
 
         output_format_eg = r"[{id:,description:,prompt_to_taskexecutor:,expected_result:,tool_use:}]"
 
-        available_tools = r"[1.Google Search, 2. Website Scraper]"
+        available_tools = r"[1.web_loader:loads the web page given the url]"
 
 
         # system details = pwd,os version,
@@ -40,7 +40,7 @@ class Planner():
 
         self.planner_prompt = f"""You are an expert at breaking down a task into subtasks. You are helping in
           the  planning stage for an OS companion system. The OS companion system is powered with the following 
-          tools {available_tools} .You will be given with the user query. After reading the
+          tools {available_tools}. Each subtask can only take in one tool. You will be given with the user query. After reading the
             query you will perform the following steps 
 
 
@@ -53,9 +53,12 @@ class Planner():
         Task example : Go out in the internet and find me the latest news on ai. In this example the tasks would be divided
         into two stages i.e. 1) search for the news on ai and  2)present the news in a readable format
 
-        3. Produce the output only as a list of subtasks in the json list format.If
+        3. Provide the task details in the following JSON list format between the delimiters:
+           <<TASK_BREAK_DOWN>>
+           {output_format_eg}
+           <<TASK_BREAK_DOWN>>.If
          no tool is needed then tool_use field should be empty.There should be no
-         other unnecessary text in the output. Output format : {output_format_eg}.
+         other unnecessary text in the output.
         
         There should be no ambiguity. Each step should be well defined so that the executor exactly knows what output to produce.
 
@@ -64,8 +67,6 @@ class Planner():
         """
 
     def run(self):
-    
-
         response = ""
         stream = self.llm.chat(self.message)
         
@@ -74,10 +75,9 @@ class Planner():
             print(content, end="")  # Print in real-time
             response += content
 
-
-        # data = json.loads(self.converttojson(response))
-
-        # print(data)
+        # Parse the response into a list of tasks
+        tasks = self.parse_tasks(response)
+        return tasks
 
 
 
@@ -92,6 +92,41 @@ class Planner():
         pass
 
     
+    def parse_tasks(self, response):
+        """
+        Parses the LLM's response to extract task details.
+        Returns a list of dictionaries containing task information.
+        """
+        try:
+            # Find the content between <<TASK_BREAK_DOWN>> and <<TASK_BREAK_DOWN>>
+            if "<<TASK_BREAK_DOWN>>" in response:
+                # Get the content between the first and second occurrence of the delimiter
+                parts = response.split("<<TASK_BREAK_DOWN>>")
+                if len(parts) >= 3:
+                    json_str = parts[1].strip()
+                    
+                    # Parse the JSON string into a list of dictionaries
+                    tasks = json.loads(json_str)
+                    
+                    # Validate that we got a list
+                    if not isinstance(tasks, list):
+                        tasks = [tasks]  # Convert single dict to list if necessary
+                    
+                    return tasks
+                else:
+                    print("Error: Could not find both task delimiters in response")
+                    return []
+            else:
+                print("Error: Could not find task delimiters in response")
+                return []
+                
+        except json.JSONDecodeError as e:
+            print(f"Error parsing JSON: {e}")
+            return []
+        except Exception as e:
+            print(f"Unexpected error while parsing tasks: {e}")
+            return []
+
 #temp execution code
 user_query = "What is the current inr to dollar conversion rate"
 
@@ -99,7 +134,7 @@ user_query = "What is the current inr to dollar conversion rate"
 planner = Planner(user_query)
 
     # Run the Planner to process the query
-planner.run()
+print(planner.run())
 
 
     
