@@ -212,29 +212,29 @@ class executor():
         pass
 
 
-planner_output =[
-  {
-    "id": 1,
-    "description": "Find the latest trends in AI.",
-    "prompt_to_taskexecutor": "Search the web for the latest trends in AI, including breakthroughs, applications, and future predictions.",
-    "expected_output": "A list of the latest trends in AI.",
-    "next_task": "Organize the trends into categories.",
-    "tool_use": "web_loader"
-  },
-  {
-    "id": 2,
-    "description": "Organize the trends into categories.",
-    "prompt_to_taskexecutor": "Organize the AI trends into categories such as 'Breakthroughs', 'Applications', and 'Future Predictions'.",
-    "expected_output": "A categorized list of AI trends.",
-    "next_task": "Summarize the key insights from the trends.",
-    "tool_use": ""
-  },
-]
+# planner_output =[
+#   {
+#     "id": 1,
+#     "description": "Find the latest trends in AI.",
+#     "prompt_to_taskexecutor": "Search the web for the latest trends in AI, including breakthroughs, applications, and future predictions.",
+#     "expected_output": "A list of the latest trends in AI.",
+#     "next_task": "Organize the trends into categories.",
+#     "tool_use": "web_loader"
+#   },
+#   {
+#     "id": 2,
+#     "description": "Organize the trends into categories.",
+#     "prompt_to_taskexecutor": "Organize the AI trends into categories such as 'Breakthroughs', 'Applications', and 'Future Predictions'.",
+#     "expected_output": "A categorized list of AI trends.",
+#     "next_task": "Summarize the key insights from the trends.",
+#     "tool_use": ""
+#   },
+# ]
 
-user_query = "What is the current inr to dollar conversion rate"
-# user_query = "What is the latest news on Ai. Cu"
-e1 = executor(user_query,planner_output)
-e1.run()
+# user_query = "What is the current inr to dollar conversion rate"
+# # user_query = "What is the latest news on Ai. Cu"
+# e1 = executor(user_query,planner_output)
+# e1.run()
 
     
 

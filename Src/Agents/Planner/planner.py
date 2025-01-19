@@ -4,6 +4,7 @@ import json
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
 
 from Src.llm_interface.llm import MistralModel
+from Src.Agents.Executor.executor import executor
 
 
 
@@ -19,6 +20,7 @@ from Src.llm_interface.llm import MistralModel
 class Planner():
 
     def __init__(self,user_query):
+        self.user_query = user_query
         self.planner_prompt_init()
         self.llm = MistralModel()
 
@@ -30,7 +32,7 @@ class Planner():
 
     def planner_prompt_init(self):
 
-        output_format_eg = r"[{id:,description:,prompt_to_taskexecutor:,expected_result:,tool_use:}]"
+        output_format_eg = r"[{id:,description:,prompt_to_taskexecutor:,expected_output:,tool_use:}]"
 
         available_tools = r"[1.web_loader:loads the web page given the url]"
 
@@ -77,7 +79,17 @@ class Planner():
 
         # Parse the response into a list of tasks
         tasks = self.parse_tasks(response)
-        return tasks
+        
+        # Create executor instance with the parsed tasks
+        to_proceed = input("do you want to proceed ?")
+        if(to_proceed == 'y'):
+            if tasks:
+                exec = executor(self.user_query, tasks)
+                exec.run()
+        else:
+            print("ending at the planner stage...")
+        
+        
 
 
 
@@ -127,14 +139,15 @@ class Planner():
             print(f"Unexpected error while parsing tasks: {e}")
             return []
 
-#temp execution code
-user_query = "What is the current inr to dollar conversion rate"
-
+# Modify the execution code
+if __name__ == "__main__":
+    user_query = "What is the current inr to dollar conversion rate"
+    
     # Instantiate the Planner with the user query
-planner = Planner(user_query)
-
-    # Run the Planner to process the query
-print(planner.run())
+    planner = Planner(user_query)
+    
+    # Run the Planner which will also create and run the executor
+    planner.run()
 
 
     
