@@ -141,7 +141,8 @@ class Planner():
 
 # Modify the execution code
 if __name__ == "__main__":
-    user_query = "What is the current inr to dollar conversion rate"
+
+    user_query = input("enter your prompt")
     
     # Instantiate the Planner with the user query
     planner = Planner(user_query)
