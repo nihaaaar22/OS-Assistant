@@ -142,7 +142,7 @@ class Planner():
 # Modify the execution code
 if __name__ == "__main__":
 
-    user_query = input("enter your prompt")
+    user_query = input("enter your prompt : ")
     
     # Instantiate the Planner with the user query
     planner = Planner(user_query)

@@ -1,6 +1,8 @@
 import os
 import sys
 import json
+import time
+from typing import Optional
 
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
@@ -17,6 +19,18 @@ from Src.Tools import tool_manager
  #base agent will not be instantiated for each task. Instead the intermediate stage output will be
  #stored in the executor only. 
 
+class RateLimiter:
+    def __init__(self, min_interval: float = 1.0):
+        self.min_interval = min_interval
+        self.last_call_time: Optional[float] = None
+
+    def wait_if_needed(self):
+        if self.last_call_time is not None:
+            elapsed_time = time.time() - self.last_call_time
+            if elapsed_time < self.min_interval:
+                time.sleep(self.min_interval - elapsed_time)
+        self.last_call_time = time.time()
+
 class executor():
 
     def __init__(self,user_prompt,planner_prompt, max_iter=3):
@@ -25,6 +39,7 @@ class executor():
         self.executor_prompt_init()
         self.llm = MistralModel()
         self.max_iter=3
+        self.rate_limiter = RateLimiter(min_interval=1.0)  # 1 second interval
 
         self.message = [
             {"role":"system","content":self.system_prompt}]
@@ -95,6 +110,9 @@ class executor():
 
     def run_inference(self):
         """Runs inference using the LLM to generate responses."""
+        # Wait if needed before making the API call
+        self.rate_limiter.wait_if_needed()
+        
         response = ""
         stream = self.llm.chat(self.message)
 
