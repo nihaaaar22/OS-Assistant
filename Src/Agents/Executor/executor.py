@@ -3,6 +3,7 @@ import sys
 import json
 import time
 from typing import Optional
+from mistralai.models.sdkerror import SDKError
 
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
@@ -20,15 +21,16 @@ from Src.Tools import tool_manager
  #stored in the executor only. 
 
 class RateLimiter:
-    def __init__(self, min_interval: float = 1.0):
-        self.min_interval = min_interval
-        self.last_call_time: Optional[float] = None
+    def __init__(self, wait_time: float = 5.0, max_retries: int = 3):
+        self.wait_time = wait_time
+        self.max_retries = max_retries
+        self.last_call_time = None
 
     def wait_if_needed(self):
         if self.last_call_time is not None:
-            elapsed_time = time.time() - self.last_call_time
-            if elapsed_time < self.min_interval:
-                time.sleep(self.min_interval - elapsed_time)
+            elapsed = time.time() - self.last_call_time
+            if elapsed < 1.0:  # Always wait 1 second between calls
+                time.sleep(1.0 - elapsed)
         self.last_call_time = time.time()
 
 class executor():
@@ -39,7 +41,10 @@ class executor():
         self.executor_prompt_init()
         self.llm = MistralModel()
         self.max_iter=3
-        self.rate_limiter = RateLimiter(min_interval=1.0)  # 1 second interval
+        self.rate_limiter = RateLimiter(
+            wait_time=5.0,    # Wait 5 seconds after rate limit error
+            max_retries=3     # Try up to 3 times
+        )
 
         self.message = [
             {"role":"system","content":self.system_prompt}]
@@ -109,22 +114,36 @@ class executor():
 """
 
     def run_inference(self):
-        """Runs inference using the LLM to generate responses."""
-        # Wait if needed before making the API call
-        self.rate_limiter.wait_if_needed()
+        """Runs inference using the LLM to generate responses with simple retry logic."""
+        retries = 0
         
-        response = ""
-        stream = self.llm.chat(self.message)
+        while retries <= self.rate_limiter.max_retries:
+            try:
+                self.rate_limiter.wait_if_needed()
+                
+                response = ""
+                stream = self.llm.chat(self.message)
 
-        for chunk in stream:
-            content = chunk.data.choices[0].delta.content
-            print(content, end="")  # Print in real-time
-            response += content
+                for chunk in stream:
+                    content = chunk.data.choices[0].delta.content
+                    print(content, end="")
+                    response += content
 
-        assistant_message = {"role": "assistant", "content": response}
-        self.message.append(assistant_message)
+                assistant_message = {"role": "assistant", "content": response}
+                self.message.append(assistant_message)
+                return response
 
-        return response
+            except SDKError as e:
+                if "429" in str(e) and retries < self.rate_limiter.max_retries:
+                    retries += 1
+                    print(f"\nRate limit exceeded. Waiting {self.rate_limiter.wait_time} seconds before retry {retries}/{self.rate_limiter.max_retries}")
+                    time.sleep(self.rate_limiter.wait_time)
+                    continue
+                else:
+                    print(f"\nError occurred: {str(e)}")
+                    raise
+
+        raise Exception("Failed to complete inference after maximum retries")
 
     def run(self):
         """Executes all tasks provided by the planner."""

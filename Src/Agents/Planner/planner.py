@@ -42,7 +42,8 @@ class Planner():
 
         self.planner_prompt = f"""You are an expert at breaking down a task into subtasks. You are helping in
           the  planning stage for an OS companion system. The OS companion system is powered with the following 
-          tools {available_tools}. Each subtask can only take in one tool. You will be given with the user query. After reading the
+          tools {available_tools}. Each subtask can only take in one tool. You will be given with the user query. 
+          After reading the
             query you will perform the following steps 
 
 
