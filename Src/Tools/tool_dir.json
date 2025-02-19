@@ -5,5 +5,12 @@
      "arguments":{
         "url":"url of the website/webpage to be scrapped"
      }
+    },
+    {"name":"web_search",
+    "summary":"It does a google search and returns the results. Important for up to date links",
+    "arguments":{
+        "query":"query that needs to be searched"
+    }
+
     }
 ]

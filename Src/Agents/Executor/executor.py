@@ -89,9 +89,9 @@ class executor():
     def executor_prompt_init(self):
         """Initializes the system and task-specific prompts for the LLM."""
 
-        self.system_prompt = """You are an operating system assistant that helps in the execution of 
+        self.system_prompt = f"""You are an operating system assistant that helps in the execution of 
         planned tasks by the planner. System details: 
-        The goal given by the user is {user_prompt}. You will be given tasks by the planner, and you 
+        The goal given by the user is {self.user_prompt}. You will be given tasks by the planner, and you 
         should only focus on the given task at hand and produce the desired result. You are powered by
         tools, about which you will be told by the planner. Your task is to check out the given tools
         and use them to implement the current task. When the task is completed, you must signal this
@@ -110,7 +110,9 @@ class executor():
            }}
            <<END_TOOL_CALL>>
 
-        Use the tools iteratively to achieve the desired result: {expected_output}. After each tool call, evaluate the output and decide if further iterations are needed. If the task is completed, include the phrase "TASK_DONE" in your response to signal that no further iterations are required.
+        Use the tools iteratively to achieve the desired result: {expected_output}. After each tool call,
+        evaluate the output and decide if further iterations are needed. If the task is completed, include 
+        the phrase "TASK_DONE" in your response to signal that no further iterations are required.
 """
 
     def run_inference(self):

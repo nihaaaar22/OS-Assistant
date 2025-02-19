@@ -34,7 +34,7 @@ class Planner():
 
         output_format_eg = r"[{id:,description:,prompt_to_taskexecutor:,expected_output:,tool_use:}]"
 
-        available_tools = r"[1.web_loader:loads the web page given the url]"
+        available_tools = r"[1.web_loader:loads the web page given the url,2.web_search:does a google search]"
 
 
         # system details = pwd,os version,
@@ -142,7 +142,6 @@ class Planner():
 
 # Modify the execution code
 if __name__ == "__main__":
-
     user_query = input("enter your prompt : ")
     
     # Instantiate the Planner with the user query
