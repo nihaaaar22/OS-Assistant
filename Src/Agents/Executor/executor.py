@@ -4,6 +4,7 @@ import json
 import time
 from typing import Optional
 from mistralai.models.sdkerror import SDKError
+from Src.Env import python_executor
 
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
@@ -114,6 +115,20 @@ class executor():
         evaluate the output and decide if further iterations are needed. If the task is completed, include 
         the phrase "TASK_DONE" in your response to signal that no further iterations are required.
 """
+
+    self.individual_task_prompt = """The current task details are given here in JSON format:
+        {task_details}. 
+
+        To write and execute code Use the delimiters `<<CODE>>` and `<<CODE>>`. Each code is an individual
+        python file that will be run and won't be a python notebook.
+
+        You are supposed to write code. If the task at hand needs iterations for extra context you can break that task. 
+        For example if you have a csv file you need to analyase , the first python code will be to get the columns 
+         and do it sequentially to get the following output {expected_output}. After each code execution you will
+         be given the output. If the task is completed, include 
+        the phrase "TASK_DONE" in your response to signal that no further iterations are required.
+"""
+
 
     def run_inference(self):
         """Runs inference using the LLM to generate responses with simple retry logic."""

@@ -19,8 +19,7 @@ def web_search(query: str, max_results: int = 10, **kwargs) -> str:
     try:
         ddgs = DDGS(**kwargs)
     except ImportError as e:
-        raise ImportError(
-            "You must install package `duckduckgo_search` to run this function: for instance run `pip install duckduckgo-search`."
+        raise ImportError("You must install package `duckduckgo_search` to run this function: for instance run `pip install duckduckgo-search`."
         ) from e
 
     results = ddgs.text(query, max_results=max_results)

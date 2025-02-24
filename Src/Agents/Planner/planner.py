@@ -32,7 +32,9 @@ class Planner():
 
     def planner_prompt_init(self):
 
-        output_format_eg = r"[{id:,description:,prompt_to_taskexecutor:,expected_output:,tool_use:}]"
+
+        output_format_eg = r"""[{id:,description:,prompt_to_taskexecutor:(carefully mentions what the executor should do with edge cases),expected_output:,tool_use:(the name of the tool to use only populate if tool is required.Only one tool at a time),to_run_code:(yes or no),
+        code_description:(should explicity mention what the code should do on execution)}]"""
 
         available_tools = r"[1.web_loader:loads the web page given the url,2.web_search:does a google search]"
 
@@ -40,32 +42,29 @@ class Planner():
         # system details = pwd,os version,
         
 
-        self.planner_prompt = f"""You are an expert at breaking down a task into subtasks. You are helping in
-          the  planning stage for an OS companion system. The OS companion system is powered with the following 
-          tools {available_tools}. Each subtask can only take in one tool. You will be given with the user query. 
-          After reading the
-            query you will perform the following steps 
+        self.planner_prompt = f"""You are an expert at breaking down a task into subtasks. You are responsible for the planning stage of OS assistant system. This assistant will act as a companion to do tasks in your computer for you. It works primarily by executing python code in the system. It also has access to the following tools : {available_tools}. 
 
+You will be given with the user query.  Based on the query you will perform the following steps. 
 
-        1.Read the query carefully then determine what task is expected from the system.
+1.Read the query carefully, think and determine what task is expected from the system. You can write down your thoughts for clarity.
 
-        2. Break down the tasks if required depending on the complexity and return the steps(to determine in what 
-        way the output will be). The steps will be sufficiently large so that one step output is required for the input
-        of the next step. The steps will be run sequentially. A new step will be produced if and only if the current step 
-        cannot proceed without the help of a language model. Optimize for the least amount of steps.
-        Task example : Go out in the internet and find me the latest news on ai. In this example the tasks would be divided
-        into two stages i.e. 1) search for the news on ai and  2)present the news in a readable format
+2. Break down the tasks if required depending on the complexity and return the steps (to determine in what 
+    way the output will be). The steps will be sufficiently large so that one step output is required for the input
+    of the next step. The steps will be run sequentially. A new step will be produced if and only if the current step 
+     cannot proceed without the help of a language model. Optimize for the least amount of steps.
 
-        3. Provide the task details in the following JSON list format between the delimiters:
+    Task example : Go out in the internet and find me the latest news on ai. In this example the tasks would be divided
+     into two stages i.e. 1) search for the news on ai and  2)present the news in a readable format.
+   
+3. Provide the task details in the following JSON list format between the delimiters:
            <<TASK_BREAK_DOWN>>
            {output_format_eg}
-           <<TASK_BREAK_DOWN>>.If
-         no tool is needed then tool_use field should be empty.There should be no
-         other unnecessary text in the output.
+           <<TASK_BREAK_DOWN>>.Each step can either execute code or run a tool not both. There should be no other unnecessary text in the output.
         
-        There should be no ambiguity. Each step should be well defined so that the executor exactly knows what output to produce.
+There should be no ambiguity. Each step should be well defined so that the executor exactly knows what output to produce.
+Each code is an individual python file that will be run and won't be a python notebook.
 
-        important note: If a function or tool is NOT explicitly specified, do not make up functions. Use training data to respond instead.
+important note: If a function or tool is NOT explicitly specified, do not make up functions. Use whatever you have at the hand currently
 
         """
 
@@ -90,9 +89,6 @@ class Planner():
         else:
             print("ending at the planner stage...")
         
-        
-
-
 
     def converttojson(self,input_string):
 
