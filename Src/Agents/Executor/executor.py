@@ -143,23 +143,25 @@ class executor:
                     error_msg = str(e)
                     self.message.append({"role": "user", "content": f"Tool Error: {error_msg}"})
                 response = self.run_inference()
+            else:
 
             # Check for code execution
-            code = self.parse_code(response)
-            if code:
-                # Ask user for confirmation before executing the code
-                user_confirmation = input("Do you want to execute the following code?\n" + code + "\n(y/n): ")
-                if user_confirmation.lower() == 'y':
-                    exec_result = self.python_executor.execute(code)
-                    output_msg = (
-                        f"Code Output: {exec_result['output']}\n"
-                        f"Execution {'succeeded' if exec_result['success'] else 'failed'}"
-                    )
-                    print(output_msg)  # Show result in the terminal
-                    self.message.append({"role": "user", "content": output_msg})
-                else:
-                    print("Code execution skipped by the user.")
-                response = self.run_inference()
+                code = self.parse_code(response)
+                if code:
+                    # Ask user for confirmation before executing the code
+                    user_confirmation = input("Do you want to execute the following code?\n" + code + "\n(y/n): ")
+                    if user_confirmation.lower() == 'y':
+                        exec_result = self.python_executor.execute(code)
+                        output_msg = (
+                            f"Code Output: {exec_result['output']}\n"
+                            f"Execution {'succeeded' if exec_result['success'] else 'failed'}"
+                        )
+                        print(output_msg)  # Show result in the terminal
+                        self.message.append({"role": "user", "content": output_msg})
+                    else:
+                        self.message.append({"role":"user","content":"i don't want to execute the code"})
+                        print("Code execution skipped by the user.")
+                    response = self.run_inference()
 
             # Check if task is done
             if "TASK_DONE" in response:
@@ -173,15 +175,7 @@ class executor:
 
         if not task_done:
             print(f"Task could not be completed within {self.max_iter} iterations.")
-
-    def generate_code(self, response):
-        """Generates Python code from the LLM response."""
-        code = self.parse_code(response)
-        if code:
-            return code
-        else:
-            print("No valid code found in response.")
-            return None
+            
 
     def execute(self, code: str, exec_env: python_executor.PythonExecutor):
         """Executes the given Python code using the provided execution environment."""
