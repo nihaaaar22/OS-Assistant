@@ -46,10 +46,13 @@ class PythonExecutor:
 
         # Create a temporary file to store the code
         with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
-            # Wrap the code to capture output
+            # Properly indent the code to fit inside the try block
+            indented_code = "\n".join(f"    {line}" for line in code.splitlines())
+            
+            # Wrap the indented code to capture output
             wrapped_code = f"""
 try:
-    {code}
+{indented_code}
 except Exception as e:
     print(f"Error: {{str(e)}}")
 """
@@ -81,7 +84,7 @@ except Exception as e:
                 'output': f'Error: {str(e)}'
             }
         finally:
-            # Clean up the temporary file
+            # Clean up the temporary fi
             os.unlink(temp_file)
     
 

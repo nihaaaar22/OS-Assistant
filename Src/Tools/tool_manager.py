@@ -13,13 +13,22 @@ tools_function_map = {
 
 
 
-def call_tool(tool_name, *args, **kwargs):
+def call_tool(tool_name, tool_input):
+    """
+    Calls the appropriate tool function with the given input.
+    
+    Args:
+        tool_name (str): Name of the tool to call
+        tool_input (dict): Input parameters for the tool
+    """
     if tool_name in tools_function_map:
-        return tools_function_map[tool_name](*args, **kwargs)
+        # Pass the tool_input dictionary as kwargs to the tool function
+        return tools_function_map[tool_name](**tool_input)
     else:
-        raise ValueError(f"Tool '{tool_name}' not found.")
+        raise ValueError(f"Tool '{tool_name}' not found. Check the tools available in the tool directory")
 
 
 # print(call_tool("web_loader","https://www.toastmasters.org"))
-# 
+# print(call_tool("web_search","manus ai"))
+
     

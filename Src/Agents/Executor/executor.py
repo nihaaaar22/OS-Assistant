@@ -25,6 +25,7 @@ class RateLimiter:
 
 class executor:
     def __init__(self, user_prompt, planner_prompt, max_iter=3):
+        
         self.planner_prompt = planner_prompt
         self.user_prompt = user_prompt
         self.executor_prompt_init()
@@ -68,29 +69,41 @@ class executor:
         return None
 
     def executor_prompt_init(self):
+        # Load tools details when initializing prompt
+        tools_details = self.get_tool_dir()
+        
         self.system_prompt = f"""You are an operating system assistant that helps in the execution of 
         planned tasks by the planner. The goal given by the user is {self.user_prompt}. You will be given tasks 
         by the planner, and you should only focus on the given task at hand and produce the desired result. 
-        You are powered by tools and can execute Python code. Your task is to check out the given tools or 
-        generate Python code to implement the current task. When the task is completed, include 'TASK_DONE' 
-        in your response."""
+        
+        You have access to the following tools:
+        {tools_details}
+        
+        Your task is to check out the given tools or generate Python code to implement the current task. 
+        When the task is completed, include 'TASK_DONE' in your response."""
 
         self.individual_task_prompt = """The current task details are given here in JSON format:
-            {task_details}. 
+            {task_details}.
 
-            To write and execute code, use the delimiters `<<CODE>>` and `<<CODE>>`. Each code is an individual
-            Python file that will be run and won't be a Python notebook. The code should achieve the expected output: 
-            {expected_output}. 
-
-            To call a tool, use the delimiters `<<TOOL_CALL>>` and `<<END_TOOL_CALL>>` with JSON format:
+            If using a tool, use these delimiters with the exact JSON format:
             <<TOOL_CALL>>
-            {{"tool_name": "", "input": ""}}
+            {{
+                "tool_name": "name_of_tool",
+                "input": {{
+                    "key": "value"  // Use the correct argument key for each tool
+                }}
+            }}
             <<END_TOOL_CALL>>
 
-            If the task requires iterations (e.g., analyzing a file step-by-step), break it into smaller code blocks.
-            After each execution or tool call, evaluate the output. If the task is completed, include 'TASK_DONE' 
-            in your response.Note that the task isn't completed until you review the code execution output or tool execution
-            output"""
+            If writing code, use these delimiters:
+            <<CODE>>
+            your_python_code_here
+            <<CODE>>
+
+            Expected output: {expected_output}
+            
+            If the task requires iterations, break it into smaller blocks.
+            After each execution or tool call, evaluate the output. Include 'TASK_DONE' when complete."""
 
     def run_inference(self):
         retries = 0
@@ -116,11 +129,12 @@ class executor:
         raise Exception("Failed to complete inference after maximum retries")
 
     def run(self):
-        tools_details = self.get_tool_dir()
+        # Remove tools_details from run since it's now in the prompt
         for task in self.planner_prompt:
-            self.run_task(task, tools_details)
+            self.run_task(task)
 
-    def run_task(self, task, tools_details):
+    def run_task(self, task):
+        # Remove tools_details parameter since it's in the prompt
         task_message = self.individual_task_prompt.format(
             task_details=task["prompt_to_taskexecutor"],
             expected_output=task["expected_output"]
@@ -138,6 +152,7 @@ class executor:
                 try:
                     # Pass tool name and input as separate arguments
                     tool_output = tool_manager.call_tool(tool_call["tool_name"], tool_call["input"])
+                    print(tool_output)
                     self.message.append({"role": "user", "content": f"Tool Output: {tool_output}"})
                 except ValueError as e:
                     error_msg = str(e)
@@ -175,9 +190,9 @@ class executor:
 
         if not task_done:
             print(f"Task could not be completed within {self.max_iter} iterations.")
-            
+
 
     def execute(self, code: str, exec_env: python_executor.PythonExecutor):
         """Executes the given Python code using the provided execution environment."""
         result = exec_env.execute(code)
-        return result
+        return result 

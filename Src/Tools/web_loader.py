@@ -106,19 +106,19 @@ def get_clean_content(html, url) -> str:
     return content
 
 
-def load_data(url, session=None):
-    """
-    Load data from a web page or PDF using a requests session.
-
-    Args:
-        url (str): The URL to fetch data from.
-        session (requests.Session, optional): A shared requests session. If None, a new session is created.
-
-    Returns:
-        dict: A dictionary containing the document ID, content, and metadata.
-    """
-    if session is None:
-        session = requests.Session()
+def load_data(**kwargs):
+    # Get the url from kwargs, raise error if not found
+    if 'url' not in kwargs:
+        raise ValueError("URL is required but not provided in kwargs")
+    
+    url = kwargs['url']
+    
+    # Alternative way using .get() with error handling
+    # url = kwargs.get('url')
+    # if url is None:
+    #     raise ValueError("URL is required but not provided in kwargs")
+    
+    session = requests.Session()
 
     headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_4) AppleWebKit/537.36 (KHTML like Gecko) Chrome/52.0.2743.116 Safari/537.36"
