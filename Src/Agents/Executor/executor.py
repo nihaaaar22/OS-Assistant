@@ -82,6 +82,8 @@ class executor:
         Your task is to check out the given tools or generate Python code to implement the current task. 
         When the task is completed, include 'TASK_DONE' in your response."""
 
+
+
         self.individual_task_prompt = """The current task details are given here in JSON format:
             {task_details}.
 
@@ -105,6 +107,7 @@ class executor:
             If the task requires iterations, break it into smaller blocks.
             After each execution or tool call, evaluate the output. Include 'TASK_DONE' when complete."""
 
+
     def run_inference(self):
         retries = 0
         while retries <= self.rate_limiter.max_retries:
@@ -127,6 +130,8 @@ class executor:
                     print(f"\nError occurred: {str(e)}")
                     raise
         raise Exception("Failed to complete inference after maximum retries")
+
+
 
     def run(self):
         # Remove tools_details from run since it's now in the prompt
@@ -158,6 +163,7 @@ class executor:
                     error_msg = str(e)
                     self.message.append({"role": "user", "content": f"Tool Error: {error_msg}"})
                 response = self.run_inference()
+
             else:
 
             # Check for code execution
@@ -174,7 +180,7 @@ class executor:
                         print(output_msg)  # Show result in the terminal
                         self.message.append({"role": "user", "content": output_msg})
                     else:
-                        self.message.append({"role":"user","content":"i don't want to execute the code"})
+                        self.message.append({"role":"user","content":"i don't want to execute the code."})
                         print("Code execution skipped by the user.")
                     response = self.run_inference()
 
@@ -188,7 +194,7 @@ class executor:
                 response = self.run_inference()
                 iteration += 1
 
-        if not task_done:
+        if not task_done: 
             print(f"Task could not be completed within {self.max_iter} iterations.")
 
 

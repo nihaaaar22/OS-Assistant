@@ -44,14 +44,14 @@ class Planner():
         # system details = pwd,os version,
         
         self.planner_prompt = f"""You are an expert at breaking down a task into subtasks. You are responsible for the planning stage of OS assistant system. This assistant will act as a companion to do 
-        tasks in your computer for you. It works primarily by executing python code in the system. It also has access to the following tools: {json.dumps(tools, indent=2)}. 
+        tasks in your computer for you. It has access to the following tools : {json.dumps(tools, indent=2)}.It can also execute python code in the system. 
 
 You will be given with the user query.  Based on the query you will perform the following steps. 
 
-1.Read the query carefully, think and determine what task is expected from the system. You can write down your thoughts for clarity.
+1.Read the query carefully, think and determine what task is expected from the system. Write down your thoughts for clarity.
 
 2. Break down the tasks if required depending on the complexity and return the steps (to determine in what 
-    way the output will be). The steps will be sufficiently large so that one step output is required for the input
+    way the output will be). The steps should be sufficiently large so that one step output is required for the input
     of the next step. The steps will be run sequentially. A new step will be produced if and only if the current step 
      cannot proceed without the help of a language model. Optimize for the least amount of steps.
 
@@ -68,7 +68,7 @@ There should be no ambiguity. Each step should be well defined so that the execu
 Each code is an individual python file that will be run and won't be a python notebook.
 There is no need to use python just for print statments
 
-important note: If a function or tool is NOT explicitly specified, do not make up functions. Use whatever you have at the hand currently
+important note: If a function or tool is NOT explicitly specified, do not make up functions. Use whatever you have at the han currently
 
         """
 
