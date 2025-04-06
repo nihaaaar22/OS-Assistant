@@ -2,6 +2,7 @@
 # faster tasks you can do with lighter models
 from dotenv import load_dotenv
 import os
+from groq import Groq
 
 # Load environment variables from .env file
 load_dotenv()
@@ -25,6 +26,25 @@ class MistralModel:
         )
 
         return stream_response
+
+        
+class Groq:
+    def __init__(self):
+        self.client = Groq(
+            api_key=os.environ.get("GROQ_API_KEY"),
+        )
+
+    def chat(self,messages):
+
+        chat_completion = self.client.chat.completions.create(
+            messages,
+            model="llama-3.3-70b-versatile",
+        )
+
+        return chat_completion
+
+# for groq 
+# print(chat_completion.choices[0].message.content)
 
 
         # # Iterate over the stream and store chunks
