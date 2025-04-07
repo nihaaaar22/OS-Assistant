@@ -11,7 +11,7 @@ from typing import Optional
 from mistralai.models.sdkerror import SDKError
 from Src.Env import python_executor
 from Src.llm_interface.llm import MistralModel
-from Src.llm_interface.llm import Groq
+from Src.llm_interface.llm import Groqinference
 
 
 from Src.Tools import tool_manager
@@ -31,12 +31,12 @@ class RateLimiter:
         self.last_call_time = time.time()
 
 class executor:
-    def __init__(self, user_prompt, max_iter=3):
+    def __init__(self, user_prompt, max_iter=10):
         
         
         self.user_prompt = user_prompt
         self.executor_prompt_init()
-        self.llm = MistralModel()
+        self.llm = Groqinference()
         self.max_iter = max_iter
         self.rate_limiter = RateLimiter(wait_time=5.0, max_retries=3)
         self.python_executor = python_executor.PythonExecutor(timeout=5)  # Initialize PythonExecutor
@@ -126,13 +126,17 @@ class executor:
             try:
                 self.rate_limiter.wait_if_needed()
                 response = ""
-                stream = self.llm.chat(self.message)
-                for chunk in stream:
-                    content = chunk.data.choices[0].delta.content
-                    print(content, end="")
-                    response += content
+                response += self.llm.chat(self.message).choices[0].message.content
+
+                # -------------------streaming for mistral ------------------------
+                # for chunk in stream:
+                #     content = chunk.data.choices[0].delta.content
+                #     print(content, end="")
+                #     response += content
                 self.message.append({"role": "assistant", "content": response})
+                print(response)
                 return response
+
             except SDKError as e:
                 if "429" in str(e) and retries < self.rate_limiter.max_retries:
                     retries += 1
@@ -214,6 +218,6 @@ class executor:
         return result 
 
 
-e1 = executor("We are making a trip from mysore to bandipur. Make me a 2 day iternary")
+e1 = executor("do a indepth analysis of Open interpreter and present me a report")
 
 e1.run()

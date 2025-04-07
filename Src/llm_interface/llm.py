@@ -28,7 +28,7 @@ class MistralModel:
         return stream_response
 
         
-class Groq:
+class Groqinference:
     def __init__(self):
         self.client = Groq(
             api_key=os.environ.get("GROQ_API_KEY"),
@@ -37,8 +37,8 @@ class Groq:
     def chat(self,messages):
 
         chat_completion = self.client.chat.completions.create(
-            messages,
-            model="llama-3.3-70b-versatile",
+            messages=messages,
+            model="meta-llama/llama-4-scout-17b-16e-instruct",
         )
 
         return chat_completion
