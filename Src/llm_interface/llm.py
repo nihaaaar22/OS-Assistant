@@ -38,7 +38,7 @@ class Groqinference:
 
         chat_completion = self.client.chat.completions.create(
             messages=messages,
-            model="meta-llama/llama-4-scout-17b-16e-instruct",
+            model="deepseek-r1-distill-llama-70b",
         )
 
         return chat_completion

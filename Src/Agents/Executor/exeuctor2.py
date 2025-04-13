@@ -79,26 +79,49 @@ class executor:
         # Load tools details when initializing prompt
         tools_details = self.get_tool_dir()
         
-        self.system_prompt = f"""You are an operating system assistant that helps in the execution of 
-        planned tasks by the planner. The goal given by the user is {self.user_prompt}. You will be given tasks 
-        by the planner, and you should only focus on the given task at hand and produce the desired result. 
-        
-        You have access to the following tools:
-        {tools_details}
-        
-        Your task is to use the given tools or generate Python code to implement the current task. 
-        When the entire task is completed, include 'TASK_DONE' in your response.
-        
-        Now lets start with executing the users tasks. Take a breath, think and start with the first step.
-        In a step you can either call a tool, write a code or simply answer the users query. But you can't 
-        do all three at the same time. After calling in the tool or writing the code you will be provided 
-        with the tool/code output. You can determine the next course of action depending on that.
+        self.system_prompt = f"""You are a terminal-based operating system assistant designed to assist users in executing tasks provided in text format. The current goal given by the user is: {self.user_prompt}.
+    
+    You have access to the following tools:
+    {tools_details}
+    
+    Your primary objective is to achieve the user's goal by iteratively performing actions—using available tools, generating Python code, or providing direct responses. You must approach the task step-by-step, evaluating the output of each action to determine the next step toward completing the user's objective.
+    
+    ### Instructions:
+    - **Iterative Execution**: Break down the user's goal into manageable steps. Execute one action per step (tool call, code execution, or direct response). Tasks may not be completed in a single action, so continue iterating as needed.
+    - **Action Options**:
+      - **Tool Call**: Use a tool when it directly supports the current step.
+      - **Code Execution**: Write Python code if a tool isn’t suitable or if custom logic is required. 
+      - **Direct Response**: Answer the user directly if the task doesn’t require tools or code.
+    - **Output Evaluation**: After each tool call or code execution, you will receive the output. Analyze this output carefully to plan the next action, adapting your approach to align with the user’s goal.
+    - **Task Completion**: Continue executing steps until the user’s objective is fully achieved. Once complete, include 'TASK_DONE' in your response to indicate the task is finished.
+    
+    ### Action Formats:
+    - **Tool Call**: Use this exact JSON format within delimiters:
+<<TOOL_CALL>>
+{{
+"tool_name": "name_of_tool",
+"input": {{
+"key": "value"  // Use the appropriate argument key for each tool
+}}
+}}
+<<END_TOOL_CALL>>
+    - **Code Execution**: Enclose Python code within these delimiters:
+<<CODE>>
+your_python_code_here
+<<CODE>>
+    - **Direct Response**: Provide the answer or information directly without delimiters.
 
-        Note that you can only execute a single tool call or code at a time.
+    ### Key Reminders:
+    - Perform only one action at a time (tool call, code execution, or direct response).
+    - Use the output of each action to inform your next step.
+    - Choose the most appropriate action based on the current context and the user’s goal.
+    - Include 'TASK_DONE' only when the entire task is completed.
 
-        """
+    Now think carefully, break down the task, and begin with the first step to achieve the goal """
+
 
         self.task_prompt = """
+         
          If using a tool, use these delimiters with the exact JSON format:
             <<TOOL_CALL>>
             {
@@ -114,8 +137,10 @@ class executor:
             your_python_code_here
             <<CODE>>
 
-        After each execution or tool call, you have to evaluate the output 
-        then decide the next action. Include 'TASK_DONE' the task is completed.
+        This is to remind you that after each execution or tool call, you have to evaluate the output 
+        then decide the next action and
+        that you can only execute a single tool call or code at a time.
+        Include 'TASK_DONE' when the user's task is completed.
 
 """
 
@@ -180,6 +205,7 @@ class executor:
 
             else:
 
+
             # Check for code execution
                 code = self.parse_code(response)
                 if code:
@@ -218,6 +244,6 @@ class executor:
         return result 
 
 
-e1 = executor("do a indepth analysis of Open interpreter and present me a report")
+e1 = executor("do visualisation of the file : /Users/niharshettigar/downloads/air_quality.csv")
 
 e1.run()
