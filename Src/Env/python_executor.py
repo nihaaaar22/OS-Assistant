@@ -19,14 +19,13 @@ import subprocess
 import tempfile
 import os
 from typing import Dict
+import textwrap
 
 class PythonExecutor:
-    def __init__(self, timeout: int = 5):
-        self.timeout = timeout
+    def __init__(self):
         self.forbidden_terms = [
             'import os', 'import sys', 'import subprocess',
-            'open(', 'file', 'exec(', 'eval(',
-            '__import__', 'system'
+            'open(', 'exec(', 'eval(',
         ]
 
     def basic_code_check(self, code: str) -> bool:
@@ -47,8 +46,8 @@ class PythonExecutor:
         # Create a temporary file to store the code
         with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
             # Properly indent the code to fit inside the try block
-            indented_code = "\n".join(f"    {line}" for line in code.splitlines())
             
+            indented_code = textwrap.indent(code, '    ')
             # Wrap the indented code to capture output
             wrapped_code = f"""
 try:
@@ -65,7 +64,7 @@ except Exception as e:
                 ['python3', temp_file],
                 capture_output=True,
                 text=True,
-                timeout=self.timeout
+
             )
 
             return {

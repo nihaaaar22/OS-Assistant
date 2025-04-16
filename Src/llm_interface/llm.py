@@ -12,7 +12,7 @@ api_key = os.environ.get('MISTRAL_API_KEY')
 from mistralai import Mistral
 
 
-model = "mistral-large-latest"
+model = "qwen-2.5-coder-32b"
 
 class MistralModel:
     def __init__(self):

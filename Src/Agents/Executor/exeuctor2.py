@@ -39,7 +39,7 @@ class executor:
         self.llm = Groqinference()
         self.max_iter = max_iter
         self.rate_limiter = RateLimiter(wait_time=5.0, max_retries=3)
-        self.python_executor = python_executor.PythonExecutor(timeout=5)  # Initialize PythonExecutor
+        self.python_executor = python_executor.PythonExecutor()  # Initialize PythonExecutor
         self.message = [{"role": "system", "content": self.system_prompt}]
 
     def get_tool_dir(self):
@@ -79,70 +79,68 @@ class executor:
         # Load tools details when initializing prompt
         tools_details = self.get_tool_dir()
         
-        self.system_prompt = f"""You are a terminal-based operating system assistant designed to assist users in executing tasks provided in text format. The current goal given by the user is: {self.user_prompt}.
-    
-    You have access to the following tools:
-    {tools_details}
-    
-    Your primary objective is to achieve the user's goal by iteratively performing actions—using available tools, generating Python code, or providing direct responses. You must approach the task step-by-step, evaluating the output of each action to determine the next step toward completing the user's objective.
-    
-    ### Instructions:
-    - **Iterative Execution**: Break down the user's goal into manageable steps. Execute one action per step (tool call, code execution, or direct response). Tasks may not be completed in a single action, so continue iterating as needed.
-    - **Action Options**:
-      - **Tool Call**: Use a tool when it directly supports the current step.
-      - **Code Execution**: Write Python code if a tool isn’t suitable or if custom logic is required. 
-      - **Direct Response**: Answer the user directly if the task doesn’t require tools or code.
-    - **Output Evaluation**: After each tool call or code execution, you will receive the output. Analyze this output carefully to plan the next action, adapting your approach to align with the user’s goal.
-    - **Task Completion**: Continue executing steps until the user’s objective is fully achieved. Once complete, include 'TASK_DONE' in your response to indicate the task is finished.
-    
-    ### Action Formats:
-    - **Tool Call**: Use this exact JSON format within delimiters:
-<<TOOL_CALL>>
-{{
-"tool_name": "name_of_tool",
-"input": {{
-"key": "value"  // Use the appropriate argument key for each tool
-}}
-}}
-<<END_TOOL_CALL>>
-    - **Code Execution**: Enclose Python code within these delimiters:
-<<CODE>>
-your_python_code_here
-<<CODE>>
-    - **Direct Response**: Provide the answer or information directly without delimiters.
+        self.system_prompt = f"""You are a terminal-based operating system assistant designed to help users achieve their goals by executing tasks provided in text format. The current user goal is: {self.user_prompt}.
 
-    ### Key Reminders:
-    - Perform only one action at a time (tool call, code execution, or direct response).
-    - Use the output of each action to inform your next step.
-    - Choose the most appropriate action based on the current context and the user’s goal.
-    - Include 'TASK_DONE' only when the entire task is completed.
+You have access to the following tools:
+{tools_details}
 
-    Now think carefully, break down the task, and begin with the first step to achieve the goal """
+Your primary objective is to accomplish the user's goal by performing step-by-step actions. These actions can include:
+1. Calling a tool
+2. Executing Python code
+3. Providing a direct response
+
+You must break down the user's goal into smaller steps and perform one action at a time. After each action, carefully evaluate the output to determine the next step.
+
+### Action Guidelines:
+- **Tool Call**: Use when a specific tool can help with the current step. Format:
+  <<TOOL_CALL>>
+  {{
+    "tool_name": "name_of_tool",
+    "input": {{
+      "key": "value"  // Replace 'key' with the actual parameter name for the tool
+    }}
+  }}
+  <<END_TOOL_CALL>>
+- **Code Execution**: Write Python code when no tool is suitable or when custom logic is needed. Format:
+  <<CODE>>
+  your_python_code_here
+  <<CODE>>
+- **Direct Response**: Provide a direct answer if the task doesn't require tools or code.
+
+### Important Notes:
+- Perform only one action per step.
+- Always evaluate the output of each action before deciding the next step.
+- Continue performing actions until the user’s goal is fully achieved. Only then, include 'TASK_DONE' in your response.
+- Do not end the task immediately after a tool call or code execution without evaluating its output.
+
+Now, carefully plan your approach and start with the first step to achieve the user's goal.
+"""
 
 
         self.task_prompt = """
-         
-         If using a tool, use these delimiters with the exact JSON format:
-            <<TOOL_CALL>>
-            {
-                "tool_name": "name_of_tool",
-                "input": {
-                    "key": "value"  // Use the correct argument key for each tool
-                }
-            }
-            <<END_TOOL_CALL>>
+Remember to format your actions correctly:
 
-            If writing code, use these delimiters:
-            <<CODE>>
-            your_python_code_here
-            <<CODE>>
+- For tool calls, use:
+  <<TOOL_CALL>>
+  {
+    "tool_name": "name_of_tool",
+    "input": {
+      "key": "value"  // Use the correct parameter name for each tool
+    }
+  }
+  <<END_TOOL_CALL>>
 
-        This is to remind you that after each execution or tool call, you have to evaluate the output 
-        then decide the next action and
-        that you can only execute a single tool call or code at a time.
-        Include 'TASK_DONE' when the user's task is completed.
+- For code execution, use:
+  <<CODE>>
+  your_python_code_here
+  <<CODE>>
 
+After each action, always evaluate the output to decide your next step. Only include 'TASK_DONE' 
+when the entire task is completed. Do not end the task immediately after a tool call or code execution without 
+checking its output. you can only execute a single tool call or code execution at a time.
 """
+
+
 
 
     def run_inference(self):
@@ -184,15 +182,17 @@ your_python_code_here
         task_message = self.task_prompt
 
         self.message.append({"role": "user", "content": task_message})
-        response = self.run_inference()
+        
 
         iteration = 0
         task_done = False
 
         while iteration < self.max_iter and not task_done:
             # Check for tool calls
+            response = self.run_inference()
             tool_call = self.parse_tool_call(response)
             if tool_call:
+                print("calling the tool")
                 try:
                     # Pass tool name and input as separate arguments
                     tool_output = tool_manager.call_tool(tool_call["tool_name"], tool_call["input"])
@@ -201,7 +201,7 @@ your_python_code_here
                 except ValueError as e:
                     error_msg = str(e)
                     self.message.append({"role": "user", "content": f"Tool Error: {error_msg}"})
-                response = self.run_inference()
+                
 
             else:
 
@@ -214,24 +214,25 @@ your_python_code_here
                     if user_confirmation.lower() == 'y':
                         exec_result = self.python_executor.execute(code)
                         output_msg = (
-                            f"Code Output: {exec_result['output']}\n"
                             f"Execution {'succeeded' if exec_result['success'] else 'failed'}"
+                            f"Code Output: {exec_result['output']}\n"
                         )
                         print(output_msg)  # Show result in the terminal
                         self.message.append({"role": "user", "content": output_msg})
                     else:
                         self.message.append({"role":"user","content":"i don't want to execute the code."})
                         print("Code execution skipped by the user.")
-                    response = self.run_inference()
+
+                    #got the problem after the first code call it goes directly unde
 
             # Check if task is done
             if "TASK_DONE" in response:
                 print("\nTask completed successfully.")
                 task_done = True
+                
             else:
                 print("\nTask not yet completed. Running another iteration...")
                 self.message.append({"role": "user", "content": "Continue with completing the task."})
-                response = self.run_inference()
                 iteration += 1
 
         if not task_done: 
@@ -244,6 +245,6 @@ your_python_code_here
         return result 
 
 
-e1 = executor("do visualisation of the file : /Users/niharshettigar/downloads/air_quality.csv")
+e1 = executor("tell me the latest news on the tariff wars")
 
 e1.run()
