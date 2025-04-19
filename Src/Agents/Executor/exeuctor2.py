@@ -35,12 +35,11 @@ class executor:
         
         
         self.user_prompt = user_prompt
-        self.executor_prompt_init()
         self.llm = Groqinference()
         self.max_iter = max_iter
         self.rate_limiter = RateLimiter(wait_time=5.0, max_retries=3)
         self.python_executor = python_executor.PythonExecutor()  # Initialize PythonExecutor
-        self.message = [{"role": "system", "content": self.system_prompt}]
+        self.message = []
 
     def get_tool_dir(self):
         with open("Src/Tools/tool_dir.json", "r") as file:
@@ -52,7 +51,7 @@ class executor:
                 start_index = response.find("<<TOOL_CALL>>") + len("<<TOOL_CALL>>")
                 end_index = response.find("<<END_TOOL_CALL>>")
                 json_str = response[start_index:end_index].strip()
-                return json.loads(json_str)
+                return json.loads(json_str)#this returns python dictionary 
             except (json.JSONDecodeError, KeyError, ValueError) as e:
                 print(f"Error parsing JSON: {e}")
                 return None
@@ -97,7 +96,7 @@ You must break down the user's goal into smaller steps and perform one action at
   {{
     "tool_name": "name_of_tool",
     "input": {{
-      "key": "value"  // Replace 'key' with the actual parameter name for the tool
+      "key": "value"   //Replace 'key' with the actual parameter name for the tool
     }}
   }}
   <<END_TOOL_CALL>>
@@ -137,7 +136,9 @@ Remember to format your actions correctly:
 
 After each action, always evaluate the output to decide your next step. Only include 'TASK_DONE' 
 when the entire task is completed. Do not end the task immediately after a tool call or code execution without 
-checking its output. you can only execute a single tool call or code execution at a time.
+checking its output. you can only execute a single tool call or code execution at a time, then check its ouput 
+then proceed with the next call
+
 """
 
 
@@ -214,7 +215,7 @@ checking its output. you can only execute a single tool call or code execution a
                     if user_confirmation.lower() == 'y':
                         exec_result = self.python_executor.execute(code)
                         output_msg = (
-                            f"Execution {'succeeded' if exec_result['success'] else 'failed'}"
+                            f"Execution {'succeeded. Evalute if the output is correct and what you needed' if exec_result['success'] else 'failed'}"
                             f"Code Output: {exec_result['output']}\n"
                         )
                         print(output_msg)  # Show result in the terminal
@@ -245,6 +246,20 @@ checking its output. you can only execute a single tool call or code execution a
         return result 
 
 
-e1 = executor("tell me the latest news on the tariff wars")
 
-e1.run()
+if __name__ == "__main__":
+    e1 = executor("")
+    user_prompt = input("Please enter your prompt: ")
+    e1.user_prompt = user_prompt
+    e1.executor_prompt_init()  # Update system_prompt
+    e1.message.append({"role": "system", "content": e1.system_prompt})  # Reset message list
+    e1.run()
+
+    while True:
+        user_prompt = input("Please enter your prompt: ")
+        e1.message.append({"role": "user", "content": user_prompt})
+        e1.message.append({"role":"user","content":e1.system_prompt})  
+        e1.run()
+
+        
+        

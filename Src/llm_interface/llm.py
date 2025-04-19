@@ -3,6 +3,8 @@
 from dotenv import load_dotenv
 import os
 from groq import Groq
+from openai import OpenAI
+
 
 # Load environment variables from .env file
 load_dotenv()
@@ -38,11 +40,23 @@ class Groqinference:
 
         chat_completion = self.client.chat.completions.create(
             messages=messages,
-            model="deepseek-r1-distill-llama-70b",
+            model="meta-llama/llama-4-maverick-17b-128e-instruct",
         )
 
         return chat_completion
 
+class OpenAi:
+    def __init(self):
+        self.client = OpenAI()
+
+    def chat(self,messages): 
+
+        response = client.responses.create(
+            model="o4-mini-2025-04-16",
+            input=messages
+        )
+
+        return response
 # for groq 
 # print(chat_completion.choices[0].message.content)
 

@@ -12,7 +12,35 @@
     "arguments":{
         "query":"query that needs to be searched"
     }
-
-
+    },
+    {
+        "name": "file_reader",
+        "summary": "Reads the content of a specified file and returns it.",
+        "arguments": {
+            "file_path": "path to the file to read"
+        }
+    },
+    {
+        "name": "file_maker",
+        "summary": "Creates an empty file at the specified path",
+        "arguments": {
+            "file_path": "path for the new file"
+        }
+    },
+    {
+        "name": "file_writer",
+        "summary": "Writes or appends content to a specified file",
+        "arguments": {
+            "file_path": "path to the file",
+            "content": "content to write",
+            "append": "boolean, set to true to append (optional, defaults to false)"
+        }
+    },
+    {
+        "name": "directory_maker",
+        "summary": "Creates a directory at the specified path",
+        "arguments": {
+            "dir_path": "path for the new directory"
+        }
     }
 ]
