@@ -46,17 +46,18 @@ class Groqinference:
         return chat_completion
 
 class OpenAi:
-    def __init(self):
+    def __init__(self):
         self.client = OpenAI()
 
     def chat(self,messages): 
 
-        response = client.responses.create(
-            model="o4-mini-2025-04-16",
-            input=messages
+        response = self.client.chat.completions.create(
+            model="gpt-4o-mini-2024-07-18",
+            messages=messages
         )
 
         return response
+
 # for groq 
 # print(chat_completion.choices[0].message.content)
 

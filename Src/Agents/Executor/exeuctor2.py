@@ -12,6 +12,7 @@ from mistralai.models.sdkerror import SDKError
 from Src.Env import python_executor
 from Src.llm_interface.llm import MistralModel
 from Src.llm_interface.llm import Groqinference
+from Src.llm_interface.llm import OpenAi
 
 
 from Src.Tools import tool_manager
@@ -35,7 +36,7 @@ class executor:
         
         
         self.user_prompt = user_prompt
-        self.llm = Groqinference()
+        self.llm = OpenAi()
         self.max_iter = max_iter
         self.rate_limiter = RateLimiter(wait_time=5.0, max_retries=3)
         self.python_executor = python_executor.PythonExecutor()  # Initialize PythonExecutor
@@ -233,7 +234,7 @@ then proceed with the next call
                 
             else:
                 print("\nTask not yet completed. Running another iteration...")
-                self.message.append({"role": "user", "content": "Continue with completing the task."})
+                self.message.append({"role": "user", "content": "If the task i mentioned is complete then output TASK_DONE .If not then run another iteration."})
                 iteration += 1
 
         if not task_done: 

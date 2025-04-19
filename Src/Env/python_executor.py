@@ -40,7 +40,7 @@ class PythonExecutor:
         if not self.basic_code_check(code):
             return {
                 'success': False,
-                'output': 'Error: Code contains potentially unsafe operations'
+                'output': 'Error: Code contains potentially unsafe operations.You can try and use tools to achieve same functionality.'
             }
 
         # Create a temporary file to store the code
