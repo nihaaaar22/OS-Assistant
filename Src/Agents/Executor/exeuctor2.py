@@ -33,14 +33,13 @@ class RateLimiter:
 
 class executor:
     def __init__(self, user_prompt, max_iter=10):
-        
-        
         self.user_prompt = user_prompt
-        self.llm = OpenAi()
+        self.llm = MistralModel()
         self.max_iter = max_iter
         self.rate_limiter = RateLimiter(wait_time=5.0, max_retries=3)
+        self.executor_prompt_init()  # Update system_prompt
         self.python_executor = python_executor.PythonExecutor()  # Initialize PythonExecutor
-        self.message = []
+        self.message = [{"role": "system", "content": self.system_prompt}]
 
     def get_tool_dir(self):
         with open("Src/Tools/tool_dir.json", "r") as file:
@@ -105,6 +104,7 @@ You must break down the user's goal into smaller steps and perform one action at
   <<CODE>>
   your_python_code_here
   <<CODE>>
+  Note that the python evironment isn't a jupiter notebook.
 - **Direct Response**: Provide a direct answer if the task doesn't require tools or code.
 
 ### Important Notes:
@@ -150,8 +150,8 @@ then proceed with the next call
         while retries <= self.rate_limiter.max_retries:
             try:
                 self.rate_limiter.wait_if_needed()
-                response = ""
-                response += self.llm.chat(self.message).choices[0].message.content
+        
+                response = self.llm.chat(self.message)
 
                 # -------------------streaming for mistral ------------------------
                 # for chunk in stream:
@@ -159,7 +159,6 @@ then proceed with the next call
                 #     print(content, end="")
                 #     response += content
                 self.message.append({"role": "assistant", "content": response})
-                print(response)
                 return response
 
             except SDKError as e:
@@ -216,7 +215,7 @@ then proceed with the next call
                     if user_confirmation.lower() == 'y':
                         exec_result = self.python_executor.execute(code)
                         output_msg = (
-                            f"Execution {'succeeded. Evalute if the output is correct and what you needed' if exec_result['success'] else 'failed'}"
+                            f"Execution {'succeeded. Evalute if the output is correct and what you needed' if exec_result['success'] else 'failed'}\n"
                             f"Code Output: {exec_result['output']}\n"
                         )
                         print(output_msg)  # Show result in the terminal
@@ -225,7 +224,7 @@ then proceed with the next call
                         self.message.append({"role":"user","content":"i don't want to execute the code."})
                         print("Code execution skipped by the user.")
 
-                    #got the problem after the first code call it goes directly unde
+                    
 
             # Check if task is done
             if "TASK_DONE" in response:
@@ -259,7 +258,7 @@ if __name__ == "__main__":
     while True:
         user_prompt = input("Please enter your prompt: ")
         e1.message.append({"role": "user", "content": user_prompt})
-        e1.message.append({"role":"user","content":e1.system_prompt})  
+        # e1.message.append({"role":"user","content":e1.system_prompt})  
         e1.run()
 
         

@@ -14,20 +14,26 @@ api_key = os.environ.get('MISTRAL_API_KEY')
 from mistralai import Mistral
 
 
-model = "qwen-2.5-coder-32b"
-
+model = "mistral-large-latest"
 class MistralModel:
     def __init__(self):
         self.client = Mistral(api_key=api_key)
 
     def chat(self,messages):
+        response = ""
 
         stream_response = self.client.chat.stream(
             model = model,
-            messages=messages
+            messages=messages,
+            temperature=0.2,
         )
 
-        return stream_response
+        for chunk in stream_response:
+            content = chunk.data.choices[0].delta.content
+            print(content, end="")
+            response += content
+
+        return response
 
         
 class Groqinference:
@@ -50,17 +56,24 @@ class OpenAi:
         self.client = OpenAI()
 
     def chat(self,messages): 
+        response = ""
 
-        response = self.client.chat.completions.create(
+        stream = self.client.chat.completions.create(
             model="gpt-4o-mini-2024-07-18",
-            messages=messages
+            messages=messages,
+            stream=True
         )
+
+        for chunk in stream:
+            content = chunk.choices[0].delta.content
+            if(content is not None):
+                print(content, end="")
+                response += content
 
         return response
 
 # for groq 
 # print(chat_completion.choices[0].message.content)
-
 
         # # Iterate over the stream and store chunks
         # for chunk in stream_response:
