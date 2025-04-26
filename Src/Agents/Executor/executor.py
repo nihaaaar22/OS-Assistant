@@ -104,13 +104,12 @@ You must break down the user's goal into smaller steps and perform one action at
   <<CODE>>
   your_python_code_here
   <<CODE>>
-  Note that the python evironment isn't a jupiter notebook.
 - **Direct Response**: Provide a direct answer if the task doesn't require tools or code.
 
 ### Important Notes:
 - Perform only one action per step.
 - Always evaluate the output of each action before deciding the next step.
-- Continue performing actions until the user’s goal is fully achieved. Only then, include 'TASK_DONE' in your response.
+- Continue performing actions until the user's goal is fully achieved. Only then, include 'TASK_DONE' in your response.
 - Do not end the task immediately after a tool call or code execution without evaluating its output.
 
 Now, carefully plan your approach and start with the first step to achieve the user's goal.
@@ -140,8 +139,9 @@ when the entire task is completed. Do not end the task immediately after a tool 
 checking its output. you can only execute a single tool call or code execution at a time, then check its ouput 
 then proceed with the next call
 
-"""
 
+
+"""
 
 
 
@@ -214,12 +214,23 @@ then proceed with the next call
                     user_confirmation = input("Do you want to execute the following code?\n" + code + "\n(y/n): ")
                     if user_confirmation.lower() == 'y':
                         exec_result = self.python_executor.execute(code)
-                        output_msg = (
-                            f"Execution {'succeeded. Evalute if the output is correct and what you needed' if exec_result['success'] else 'failed'}\n"
-                            f"Code Output: {exec_result['output']}\n"
-                        )
-                        print(output_msg)  # Show result in the terminal
-                        self.message.append({"role": "user", "content": output_msg})
+
+                        if exec_result['output'] == "":
+                            no_output_msg = (
+                                "Execution completed but no output was shown. "
+                                "Please add print statements to show the results.This isn't a jupiter notebook environment. "
+                                "For example: print(your_variable) or print('Your message')"
+                            )
+                            self.message.append({"role": "user", "content": no_output_msg})
+                            continue
+                            
+                        else:
+                            output_msg = (
+                                f"Execution {'succeeded. Evaluate if the output is correct and what you needed' if exec_result['success'] else 'failed'}\n"
+                                f"Code Output: {exec_result['output']}\n"
+                            )
+                            print(output_msg)
+                            self.message.append({"role": "user", "content": output_msg})
                     else:
                         self.message.append({"role":"user","content":"i don't want to execute the code."})
                         print("Code execution skipped by the user.")
