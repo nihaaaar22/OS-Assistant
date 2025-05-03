@@ -6,6 +6,9 @@ import sys
 import json
 import time
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
+from Src.Utils.ter_interface import TerminalInterface
+
+
 
 from typing import Optional
 from mistralai.models.sdkerror import SDKError
@@ -40,6 +43,8 @@ class executor:
         self.executor_prompt_init()  # Update system_prompt
         self.python_executor = python_executor.PythonExecutor()  # Initialize PythonExecutor
         self.message = [{"role": "system", "content": self.system_prompt}]
+        self.terminal = TerminalInterface()
+
 
     def get_tool_dir(self):
         with open("Src/Tools/tool_dir.json", "r") as file:
@@ -138,6 +143,7 @@ After each action, always evaluate the output to decide your next step. Only inc
 when the entire task is completed. Do not end the task immediately after a tool call or code execution without 
 checking its output. you can only execute a single tool call or code execution at a time, then check its ouput 
 then proceed with the next call
+Note: This is a standard Python environment, not a Jupyter notebook. Each code execution is independent and previous code context is not preserved between executions.
 
 
 
@@ -174,7 +180,6 @@ then proceed with the next call
 
 
     def run(self):
-        # Remove tools_details from run since it's now in the prompt
         
         self.run_task()
 
@@ -193,11 +198,11 @@ then proceed with the next call
             response = self.run_inference()
             tool_call = self.parse_tool_call(response)
             if tool_call:
-                print("calling the tool")
+                print(f"\nCalling tool: {tool_call['tool_name']}")
                 try:
                     # Pass tool name and input as separate arguments
                     tool_output = tool_manager.call_tool(tool_call["tool_name"], tool_call["input"])
-                    print(tool_output)
+                    self.terminal.tool_output_log(tool_output, tool_call["tool_name"])
                     self.message.append({"role": "user", "content": f"Tool Output: {tool_output}"})
                 except ValueError as e:
                     error_msg = str(e)
