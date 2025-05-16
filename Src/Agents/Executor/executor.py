@@ -8,8 +8,6 @@ import time
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
 from Src.Utils.ter_interface import TerminalInterface
 
-
-
 from typing import Optional
 from mistralai.models.sdkerror import SDKError
 from Src.Env import python_executor
@@ -17,9 +15,7 @@ from Src.llm_interface.llm import MistralModel
 from Src.llm_interface.llm import Groqinference
 from Src.llm_interface.llm import OpenAi
 
-
 from Src.Tools import tool_manager
-
 
 class RateLimiter:
     def __init__(self, wait_time: float = 5.0, max_retries: int = 3):
@@ -45,7 +41,6 @@ class executor:
         self.message = [{"role": "system", "content": self.system_prompt}]
         self.terminal = TerminalInterface()
 
-
     def get_tool_dir(self):
         with open("Src/Tools/tool_dir.json", "r") as file:
             return file.read()
@@ -56,7 +51,7 @@ class executor:
                 start_index = response.find("<<TOOL_CALL>>") + len("<<TOOL_CALL>>")
                 end_index = response.find("<<END_TOOL_CALL>>")
                 json_str = response[start_index:end_index].strip()
-                return json.loads(json_str)#this returns python dictionary 
+                return json.loads(json_str)#this returns python dictionary
             except (json.JSONDecodeError, KeyError, ValueError) as e:
                 print(f"Error parsing JSON: {e}")
                 return None
@@ -82,7 +77,7 @@ class executor:
     def executor_prompt_init(self):
         # Load tools details when initializing prompt
         tools_details = self.get_tool_dir()
-        
+
         self.system_prompt = f"""You are a terminal-based operating system assistant designed to help users achieve their goals by executing tasks provided in text format. The current user goal is: {self.user_prompt}.
 
 You have access to the following tools:
@@ -120,7 +115,6 @@ You must break down the user's goal into smaller steps and perform one action at
 Now, carefully plan your approach and start with the first step to achieve the user's goal.
 """
 
-
         self.task_prompt = """
 Remember to format your actions correctly:
 
@@ -139,24 +133,20 @@ Remember to format your actions correctly:
   your_python_code_here
   <<CODE>>
 
-After each action, always evaluate the output to decide your next step. Only include 'TASK_DONE' 
-when the entire task is completed. Do not end the task immediately after a tool call or code execution without 
-checking its output. you can only execute a single tool call or code execution at a time, then check its ouput 
+After each action, always evaluate the output to decide your next step. Only include 'TASK_DONE'
+when the entire task is completed. Do not end the task immediately after a tool call or code execution without
+checking its output. you can only execute a single tool call or code execution at a time, then check its ouput
 then proceed with the next call
 Note: This is a standard Python environment, not a Jupyter notebook. Each code execution is independent and previous code context is not preserved between executions.
 
-
-
 """
-
-
 
     def run_inference(self):
         retries = 0
         while retries <= self.rate_limiter.max_retries:
             try:
                 self.rate_limiter.wait_if_needed()
-        
+
                 response = self.llm.chat(self.message)
 
                 # -------------------streaming for mistral ------------------------
@@ -177,10 +167,8 @@ Note: This is a standard Python environment, not a Jupyter notebook. Each code e
                     raise
         raise Exception("Failed to complete inference after maximum retries")
 
-
-
     def run(self):
-        
+
         self.run_task()
 
     def run_task(self):
@@ -188,7 +176,6 @@ Note: This is a standard Python environment, not a Jupyter notebook. Each code e
         task_message = self.task_prompt
 
         self.message.append({"role": "user", "content": task_message})
-        
 
         iteration = 0
         task_done = False
@@ -207,10 +194,8 @@ Note: This is a standard Python environment, not a Jupyter notebook. Each code e
                 except ValueError as e:
                     error_msg = str(e)
                     self.message.append({"role": "user", "content": f"Tool Error: {error_msg}"})
-                
 
             else:
-
 
             # Check for code execution
                 code = self.parse_code(response)
@@ -228,7 +213,7 @@ Note: This is a standard Python environment, not a Jupyter notebook. Each code e
                             )
                             self.message.append({"role": "user", "content": no_output_msg})
                             continue
-                            
+
                         else:
                             output_msg = (
                                 f"Execution {'succeeded. Evaluate if the output is correct and what you needed' if exec_result['success'] else 'failed'}\n"
@@ -240,28 +225,23 @@ Note: This is a standard Python environment, not a Jupyter notebook. Each code e
                         self.message.append({"role":"user","content":"i don't want to execute the code."})
                         print("Code execution skipped by the user.")
 
-                    
-
             # Check if task is done
             if "TASK_DONE" in response:
                 print("\nTask completed successfully.")
                 task_done = True
-                
+
             else:
                 print("\nTask not yet completed. Running another iteration...")
                 self.message.append({"role": "user", "content": "If the task i mentioned is complete then output TASK_DONE .If not then run another iteration."})
                 iteration += 1
 
-        if not task_done: 
+        if not task_done:
             print(f"Task could not be completed within {self.max_iter} iterations.")
-
 
     def execute(self, code: str, exec_env: python_executor.PythonExecutor):
         """Executes the given Python code using the provided execution environment."""
         result = exec_env.execute(code)
-        return result 
-
-
+        return result
 
 if __name__ == "__main__":
     e1 = executor("")
@@ -274,8 +254,6 @@ if __name__ == "__main__":
     while True:
         user_prompt = input("Please enter your prompt: ")
         e1.message.append({"role": "user", "content": user_prompt})
-        # e1.message.append({"role":"user","content":e1.system_prompt})  
+        # e1.message.append({"role":"user","content":e1.system_prompt})
         e1.run()
 
-        
-        
