@@ -216,7 +216,7 @@ Note: This is a standard Python environment, not a Jupyter notebook. Each code e
                 code = self.parse_code(response)
                 if code:
                     # Ask user for confirmation before executing the code
-                    user_confirmation = input("Do you want to execute the following code?\n" + code + "\n(y/n): ")
+                    user_confirmation = input("Do you want to execute the above code?\n ")
                     if user_confirmation.lower() == 'y':
                         exec_result = self.python_executor.execute(code)
 
