@@ -4,6 +4,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'
 from Src.Tools.web_loader import load_data
 from Src.Tools.web_search import web_search
 from Src.Tools.file_task import file_reader, file_maker, file_writer, directory_maker
+from Src.Tools.system_details import get_os_details, get_datetime, get_memory_usage, get_cpu_info
+
 #need to transform it into map of dictionary
 #name : [function : xyz,description : blah bah]
 
@@ -13,7 +15,11 @@ tools_function_map = {
     "file_maker": file_maker,
     "file_reader":file_reader,
     "directory_maker":directory_maker,
-    "file_writer":file_writer
+    "file_writer":file_writer,
+    "get_os_details": get_os_details,
+    "get_datetime": get_datetime,
+    "get_memory_usage": get_memory_usage,
+    "get_cpu_info": get_cpu_info
 }
 
 

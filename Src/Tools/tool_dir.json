@@ -42,5 +42,25 @@
         "arguments": {
             "dir_path": "path for the new directory"
         }
+    },
+    {
+        "name": "get_os_details",
+        "summary": "Gets operating system details including system, release, version, machine, and processor information",
+        "arguments": {}
+    },
+    {
+        "name": "get_datetime",
+        "summary": "Gets current date, time, and timezone information",
+        "arguments": {}
+    },
+    {
+        "name": "get_memory_usage",
+        "summary": "Gets memory usage details including total, available, used memory and usage percentage",
+        "arguments": {}
+    },
+    {
+        "name": "get_cpu_info",
+        "summary": "Gets CPU information including core count, frequency, and usage percentage",
+        "arguments": {}
     }
 ]
