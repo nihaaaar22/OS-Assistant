@@ -1,0 +1,5 @@
+{
+    "working_directory": "/path/to/your/working/directory",
+    "api_key": "your_api_key_here",
+    "other_setting": "value"
+} 
