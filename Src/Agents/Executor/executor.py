@@ -33,16 +33,35 @@ class RateLimiter:
 class executor:
     def __init__(self, user_prompt, max_iter=10):
         self.user_prompt = user_prompt
-        self.llm = MistralModel()
         self.max_iter = max_iter
         self.rate_limiter = RateLimiter(wait_time=5.0, max_retries=3)
         self.executor_prompt_init()  # Update system_prompt
         self.python_executor = python_executor.PythonExecutor()  # Initialize PythonExecutor
         self.message = [{"role": "system", "content": self.system_prompt}]
         self.terminal = TerminalInterface()
+        self.initialize_llm()
+
+    def initialize_llm(self):
+        config_path = os.path.join(os.path.dirname(__file__), '../../../config.json')
+        with open(config_path, "r") as config_file:
+            config = json.load(config_file)
+            llm_provider = config.get("llm_provider", "mistral")
+            
+        
+        if llm_provider.lower() == "mistral":
+            self.llm = MistralModel()
+        elif llm_provider.lower() == "groq":
+            self.llm = Groqinference()
+        elif llm_provider.lower() == "openai":
+            self.llm = OpenAi()
+        else:
+            raise ValueError(f"Unsupported LLM provider: {llm_provider}")
 
     def get_tool_dir(self):
-        with open("Src/Tools/tool_dir.json", "r") as file:
+        # Get the absolute path to the project root directory
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../'))
+        tool_dir_path = os.path.join(project_root, 'Src', 'Tools', 'tool_dir.json')
+        with open(tool_dir_path, "r") as file:
             return file.read()
 
     def parse_tool_call(self, response):
@@ -78,7 +97,13 @@ class executor:
         # Load tools details when initializing prompt
         tools_details = self.get_tool_dir()
 
+        with open(os.path.join(os.path.dirname(__file__), '../../../config.json'), "r") as config_file:
+            config = json.load(config_file)
+            working_dir = config.get("working_directory", "")
+
         self.system_prompt = f"""You are a terminal-based operating system assistant designed to help users achieve their goals by executing tasks provided in text format. The current user goal is: {self.user_prompt}.
+
+Working Directory: {working_dir}
 
 You have access to the following tools:
 {tools_details}
@@ -116,28 +141,39 @@ Now, carefully plan your approach and start with the first step to achieve the u
 """
 
         self.task_prompt = """
-Remember to format your actions correctly:
+Following are the things that you must read carefully and remember:
 
-- For tool calls, use:
-  <<TOOL_CALL>>
-  {
-    "tool_name": "name_of_tool",
-    "input": {
-      "key": "value"  // Use the correct parameter name for each tool
-    }
-  }
-  <<END_TOOL_CALL>>
+        - For tool calls, use:
+        <<TOOL_CALL>>
+        {
+            "tool_name": "name_of_tool",
+            "input": {
+            "key": "value"  // Use the correct parameter name for each tool
+            }
+        }
+        <<END_TOOL_CALL>>
 
-- For code execution, use:
-  <<CODE>>
-  your_python_code_here
-  <<CODE>>
+        - For code execution, use:
+        <<CODE>>
+        your_python_code_here
+        <<CODE>>
 
-After each action, always evaluate the output to decide your next step. Only include 'TASK_DONE'
-when the entire task is completed. Do not end the task immediately after a tool call or code execution without
-checking its output. you can only execute a single tool call or code execution at a time, then check its ouput
-then proceed with the next call
-Note: This is a standard Python environment, not a Jupyter notebook. Each code execution is independent and previous code context is not preserved between executions.
+        After each action, always evaluate the output to decide your next step. Only include 'TASK_DONE'
+        When the entire task is completed. Do not end the task immediately after a tool call or code execution without
+        checking its output. 
+        You can only execute a single tool call or code execution at a time, then check its ouput
+        then proceed with the next call
+        Use the working directory as the current directory for all file operations unless otherwise specified.
+        
+        
+
+        These are the things that you learn't from the mistakes you made earlier :
+
+        - When given a data file and asked to understand data/do data analysis/ data visualisation or similar stuff
+        do not use file reader and read the whole data. Only use python code to do the analysis
+        - This is a standard Python environment, not a python notebook or a repl. previous execution
+         context is not preserved between executions.
+        - You have a get_user_input tool to ask user more context before, in between or after tasks
 
 """
 
@@ -227,11 +263,10 @@ Note: This is a standard Python environment, not a Jupyter notebook. Each code e
 
             # Check if task is done
             if "TASK_DONE" in response:
-                print("\nTask completed successfully.")
+                
                 task_done = True
 
             else:
-                print("\nTask not yet completed. Running another iteration...")
                 self.message.append({"role": "user", "content": "If the task i mentioned is complete then output TASK_DONE .If not then run another iteration."})
                 iteration += 1
 
