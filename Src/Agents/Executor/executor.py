@@ -11,6 +11,7 @@ from Src.Utils.ter_interface import TerminalInterface
 from typing import Optional
 from mistralai.models.sdkerror import SDKError
 from Src.Env import python_executor
+from Src.Env.shell import ShellExecutor # Import ShellExecutor
 from Src.llm_interface.llm import MistralModel
 from Src.llm_interface.llm import Groqinference
 from Src.llm_interface.llm import OpenAi
@@ -37,6 +38,7 @@ class executor:
         self.rate_limiter = RateLimiter(wait_time=5.0, max_retries=3)
         self.executor_prompt_init()  # Update system_prompt
         self.python_executor = python_executor.PythonExecutor()  # Initialize PythonExecutor
+        self.shell_executor = ShellExecutor() # Initialize ShellExecutor
         self.message = [{"role": "system", "content": self.system_prompt}]
         self.terminal = TerminalInterface()
         self.initialize_llm()
@@ -93,6 +95,23 @@ class executor:
                 return None
         return None
 
+    def parse_shell_command(self, response):
+        """Extracts shell commands from the response between <<SHELL_COMMAND>> delimiters."""
+        if "<<SHELL_COMMAND>>" in response:
+            try:
+                start_index = response.find("<<SHELL_COMMAND>>") + len("<<SHELL_COMMAND>>")
+                end_index = response.find("<<END_SHELL_COMMAND>>", start_index)
+                if end_index != -1:
+                    shell_command_str = response[start_index:end_index].strip()
+                    return shell_command_str
+                else:
+                    print("Error: Could not find both shell command delimiters in response")
+                    return None
+            except Exception as e:
+                print(f"Error parsing shell command: {e}")
+                return None
+        return None
+
     def executor_prompt_init(self):
         # Load tools details when initializing prompt
         tools_details = self.get_tool_dir()
@@ -111,7 +130,8 @@ You have access to the following tools:
 Your primary objective is to accomplish the user's goal by performing step-by-step actions. These actions can include:
 1. Calling a tool
 2. Executing Python code
-3. Providing a direct response
+3. Executing Shell commands
+4. Providing a direct response
 
 You must break down the user's goal into smaller steps and perform one action at a time. After each action, carefully evaluate the output to determine the next step.
 
@@ -129,6 +149,10 @@ You must break down the user's goal into smaller steps and perform one action at
   <<CODE>>
   your_python_code_here
   <<CODE>>
+- **Shell Command Execution**: Execute shell commands when needed. Format:
+  <<SHELL_COMMAND>>
+  your_shell_command_here
+  <<END_SHELL_COMMAND>>
 - **Direct Response**: Provide a direct answer if the task doesn't require tools or code.
 
 ### Important Notes:
@@ -157,6 +181,11 @@ Following are the things that you must read carefully and remember:
         <<CODE>>
         your_python_code_here
         <<CODE>>
+
+        - For shell command execution, use:
+        <<SHELL_COMMAND>>
+        your_shell_command_here
+        <<END_SHELL_COMMAND>>
 
         After each action, always evaluate the output to decide your next step. Only include 'TASK_DONE'
         When the entire task is completed. Do not end the task immediately after a tool call or code execution without
@@ -230,36 +259,58 @@ Following are the things that you must read carefully and remember:
                 except ValueError as e:
                     error_msg = str(e)
                     self.message.append({"role": "user", "content": f"Tool Error: {error_msg}"})
-
-            else:
-
-            # Check for code execution
+            
+            else: # Not a tool call, check for code or shell command
                 code = self.parse_code(response)
+                shell_command = self.parse_shell_command(response)
+
                 if code:
                     # Ask user for confirmation before executing the code
-                    user_confirmation = input("Do you want to execute the above code?\n ")
+                    user_confirmation = input("Do you want to execute the Python code?\n ")
                     if user_confirmation.lower() == 'y':
                         exec_result = self.python_executor.execute(code)
+                        if exec_result['output'] == "" and not exec_result['success']: # if there is an error, output might be empty
+                            error_msg = (
+                                f"Python execution failed.\n"
+                                f"Error: {exec_result['error']}"
+                            )
+                            print(error_msg)
+                            self.message.append({"role": "user", "content": error_msg})
 
-                        if exec_result['output'] == "":
+                        elif exec_result['output'] == "":
                             no_output_msg = (
-                                "Execution completed but no output was shown. "
-                                "Please add print statements to show the results.This isn't a jupiter notebook environment. "
+                                "Python execution completed but no output was shown. "
+                                "Please add print statements to show the results. This isn't a jupyter notebook environment. "
                                 "For example: print(your_variable) or print('Your message')"
                             )
                             self.message.append({"role": "user", "content": no_output_msg})
-                            continue
-
+                        
                         else:
                             output_msg = (
-                                f"Execution {'succeeded. Evaluate if the output is correct and what you needed' if exec_result['success'] else 'failed'}\n"
+                                f"Python execution {'succeeded. Evaluate if the output is correct and what you needed' if exec_result['success'] else 'failed'}\n"
                                 f"Code Output: {exec_result['output']}\n"
+                                f"Error (if any): {exec_result['error']}\n"
                             )
                             print(output_msg)
                             self.message.append({"role": "user", "content": output_msg})
                     else:
-                        self.message.append({"role":"user","content":"i don't want to execute the code."})
-                        print("Code execution skipped by the user.")
+                        self.message.append({"role":"user","content":"User chose not to execute the Python code."})
+                        print("Python code execution skipped by the user.")
+                
+                elif shell_command:
+                    user_confirmation = input(f"Do you want to execute the shell command: '{shell_command}'?\n ")
+                    if user_confirmation.lower() == 'y':
+                        shell_result = self.shell_executor.execute(shell_command)
+                        output_msg = (
+                            f"Shell command execution {'succeeded' if shell_result['success'] else 'failed'}.\n"
+                            f"Output:\n{shell_result['output']}\n"
+                            f"Error (if any):\n{shell_result['error']}\n"
+                        )
+                        print(output_msg)
+                        self.message.append({"role": "user", "content": output_msg})
+                    else:
+                        self.message.append({"role":"user","content":"User chose not to execute the shell command."})
+                        print("Shell command execution skipped by the user.")
 
             # Check if task is done
             if "TASK_DONE" in response:
@@ -291,4 +342,3 @@ if __name__ == "__main__":
         e1.message.append({"role": "user", "content": user_prompt})
         # e1.message.append({"role":"user","content":e1.system_prompt})
         e1.run()
-
