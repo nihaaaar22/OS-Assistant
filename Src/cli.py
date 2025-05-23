@@ -6,32 +6,50 @@ import shutil
 from OpenCopilot import OpenCopilot
 from dotenv import load_dotenv
 
-# Define available models for each provider
+# Define available models for each provider using litellm compatible strings
 AVAILABLE_MODELS = {
+    "openai": [
+        "openai/gpt-3.5-turbo",
+        "openai/gpt-4",
+        "openai/gpt-4-turbo-preview",
+        "openai/gpt-4o" 
+    ],
     "mistral": [
-        "mistral-tiny",
-        "mistral-small",
-        "mistral-medium",
-        "mistral-large-latest"
+        "mistral/mistral-tiny",
+        "mistral/mistral-small",
+        "mistral/mistral-medium",
+        "mistral/mistral-large-latest"
     ],
     "groq": [
-        "llama2-70b-4096",
-        "mixtral-8x7b-32768",
-        "gemma-7b-it"
+        "groq/llama2-70b-4096", 
+        "groq/mixtral-8x7b-32768",
+        "groq/gemma-7b-it"
     ],
-    "openai": [
-        "gpt-3.5-turbo",
-        "gpt-4",
-        "gpt-4-turbo-preview"
+    "anthropic": [
+        "anthropic/claude-3-opus-20240229",
+        "anthropic/claude-3-sonnet-20240229",
+        "anthropic/claude-3-haiku-20240307"
     ]
 }
 
-# Define API key environment variables for each provider
+# Define API key environment variables for each provider (matching litellm conventions)
 API_KEYS = {
+    "openai": "OPENAI_API_KEY",
     "mistral": "MISTRAL_API_KEY",
     "groq": "GROQ_API_KEY",
-    "openai": "OPENAI_API_KEY"
+    "anthropic": "ANTHROPIC_API_KEY"
 }
+
+def get_provider_from_model_name(model_name: str) -> str:
+    """Extracts the provider from a litellm model string (e.g., 'openai/gpt-4o' -> 'openai')."""
+    if not model_name or '/' not in model_name:
+        # Fallback or error handling if model_name is not in expected format
+        # For now, try to return the model_name itself if it doesn't contain '/',
+        # as it might be a provider name already or an old format.
+        # This case should ideally be handled based on how robust the system needs to be.
+        print(f"Warning: Model name '{model_name}' may not be in 'provider/model' format. Attempting to use as provider.")
+        return model_name 
+    return model_name.split('/')[0]
 
 def clear_terminal():
     """Clear the terminal screen"""
@@ -105,49 +123,85 @@ def ensure_config_exists():
             with open(config_path, 'r') as f:
                 config = json.load(f)
         else:
+            # Create a default config if example is missing
             config = {
                 "working_directory": os.getcwd(),
-                "llm_provider": None,
-                "model_name": None
+                "llm_provider": None, # Will store the provider part, e.g., "openai"
+                "model_name": None    # Will store the full litellm string, e.g., "openai/gpt-4o"
             }
-            with open(config_path, 'w') as f:
-                json.dump(config, f, indent=4)
     else:
         # Read existing config
         with open(config_path, 'r') as f:
-            config = json.load(f)
-    
-    # Check if required fields are present
-    if not config.get("llm_provider") or not config.get("model_name"):
+            try:
+                config = json.load(f)
+            except json.JSONDecodeError:
+                print("Error reading config.json. File might be corrupted. Re-creating default.")
+                config = {
+                    "working_directory": os.getcwd(),
+                    "llm_provider": None,
+                    "model_name": None
+                }
+
+    # Ensure 'working_directory' exists, default if not
+    if "working_directory" not in config or not config["working_directory"]:
+        config["working_directory"] = os.getcwd()
+
+    # Check if model configuration is needed
+    if not config.get("model_name") or not config.get("llm_provider"):
+        print("LLM provider or model not configured.")
         questions = [
-            inquirer.List('provider',
+            inquirer.List('provider_key',
                 message="Select LLM Provider",
-                choices=list(AVAILABLE_MODELS.keys())
+                choices=list(AVAILABLE_MODELS.keys()) # User selects "openai", "mistral", etc.
             )
         ]
-        provider = inquirer.prompt(questions)['provider']
+        selected_provider_key = inquirer.prompt(questions)['provider_key']
         clear_terminal()
         
         # Ensure API key exists for the selected provider
-        ensure_api_key(provider)
+        ensure_api_key(selected_provider_key) # Uses "openai", "mistral", etc.
         
         questions = [
-            inquirer.List('model',
-                message=f"Select {provider} Model",
-                choices=AVAILABLE_MODELS[provider]
+            inquirer.List('model_name_full',
+                message=f"Select {selected_provider_key} Model",
+                choices=AVAILABLE_MODELS[selected_provider_key] # Shows "openai/gpt-3.5-turbo", etc.
             )
         ]
-        model = inquirer.prompt(questions)['model']
+        selected_model_name_full = inquirer.prompt(questions)['model_name_full']
         clear_terminal()
         
-        config["llm_provider"] = provider
-        config["model_name"] = model
+        config["llm_provider"] = selected_provider_key # Store "openai"
+        config["model_name"] = selected_model_name_full # Store "openai/gpt-4o"
         
         with open(config_path, 'w') as f:
             json.dump(config, f, indent=4)
-    
-    # Ensure API key exists for the selected provider
-    ensure_api_key(config["llm_provider"])
+        print(f"Configuration saved: Provider '{selected_provider_key}', Model '{selected_model_name_full}'")
+
+    else:
+        # Config exists, ensure API key for the stored provider
+        # llm_provider should already be the provider part, e.g., "openai"
+        # If old config only had model_name, try to parse provider from it
+        provider_to_check = config.get("llm_provider")
+        if not provider_to_check and config.get("model_name"):
+            provider_to_check = get_provider_from_model_name(config["model_name"])
+            # Optionally, update config if llm_provider was missing
+            if provider_to_check != config.get("llm_provider"): # Check if it's different or was None
+                config["llm_provider"] = provider_to_check
+                with open(config_path, 'w') as f:
+                    json.dump(config, f, indent=4)
+
+        if provider_to_check:
+             ensure_api_key(provider_to_check)
+        else:
+            # This case should ideally be handled by the initial setup logic
+            print("Warning: Could not determine LLM provider from config to ensure API key.")
+
+
+    # Create config file if it was created from scratch without example
+    if not os.path.exists(config_path):
+        with open(config_path, 'w') as f:
+            json.dump(config, f, indent=4)
+            
     return config_path
 
 @click.group(invoke_without_command=True)
@@ -166,35 +220,56 @@ def cli(ctx, task, max_iter, change_model):
         with open(config_path, 'r') as f:
             config = json.load(f)
         
+        print("Current configuration: Provider: {}, Model: {}".format(config.get("llm_provider"), config.get("model_name")))
         questions = [
-            inquirer.List('provider',
+            inquirer.List('provider_key',
                 message="Select LLM Provider",
-                choices=list(AVAILABLE_MODELS.keys())
+                choices=list(AVAILABLE_MODELS.keys()) # User selects "openai", "mistral", etc.
             )
         ]
-        provider = inquirer.prompt(questions)['provider']
+        selected_provider_key = inquirer.prompt(questions)['provider_key']
         clear_terminal()
         
-        
+        # Ensure API key exists for the selected provider
+        ensure_api_key(selected_provider_key)
         
         questions = [
-            inquirer.List('model',
-                message=f"Select {provider} Model",
-                choices=AVAILABLE_MODELS[provider]
+            inquirer.List('model_name_full',
+                message=f"Select {selected_provider_key} Model",
+                choices=AVAILABLE_MODELS[selected_provider_key] # Shows "openai/gpt-3.5-turbo", etc.
             )
         ]
-        model = inquirer.prompt(questions)['model']
+        selected_model_name_full = inquirer.prompt(questions)['model_name_full']
         clear_terminal()
         
-        config["llm_provider"] = provider
-        config["model_name"] = model
+        config["llm_provider"] = selected_provider_key # Store "openai"
+        config["model_name"] = selected_model_name_full # Store "openai/gpt-4o"
         
+        # Ensure working_directory is preserved or set
+        if "working_directory" not in config or not config["working_directory"]:
+            config["working_directory"] = os.getcwd()
+
         with open(config_path, 'w') as f:
             json.dump(config, f, indent=4)
         
-        click.echo(f"Model changed to {provider}/{model}")
+        click.echo(f"Model changed to {selected_model_name_full}")
         return
     
+    # Ensure API key for the configured model before running OpenCopilot
+    # This is a bit redundant if ensure_config_exists already did it, but good for safety
+    with open(config_path, 'r') as f:
+        config = json.load(f)
+    
+    current_provider = config.get("llm_provider")
+    if not current_provider and config.get("model_name"): # If llm_provider is missing, try to derive it
+        current_provider = get_provider_from_model_name(config["model_name"])
+    
+    if current_provider:
+        ensure_api_key(current_provider)
+    else:
+        click.echo("Error: LLM provider not configured. Please run with --change-model to set it up.", err=True)
+        return
+
     copilot = OpenCopilot()
     if ctx.invoked_subcommand is None:
         if task:
@@ -214,12 +289,12 @@ def list_tools():
 
 @cli.command('list-models')
 def list_models():
-    """List all available LLM providers and their models"""
-    click.echo("Available LLM Providers and Models:")
-    for provider, models in AVAILABLE_MODELS.items():
-        click.echo(f"\n{provider.upper()}:")
-        for model in models:
-            click.echo(f"  - {model}")
+    """List all available LLM providers and their models (litellm compatible)"""
+    click.echo("Available LLM Providers and Models (litellm compatible):")
+    for provider_key, model_list in AVAILABLE_MODELS.items():
+        click.echo(f"\n{provider_key.upper()}:") # provider_key is "openai", "mistral", etc.
+        for model_name_full in model_list: # model_name_full is "openai/gpt-4o", etc.
+            click.echo(f"  - {model_name_full}")
 
 if __name__ == '__main__':
     cli() 

@@ -9,12 +9,12 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../.
 from Src.Utils.ter_interface import TerminalInterface
 
 from typing import Optional
-from mistralai.models.sdkerror import SDKError
+from mistralai.models.sdkerror import SDKError # This might be an issue if LiteLLM doesn't use SDKError
+                                              # LiteLLM maps exceptions to OpenAI exceptions.
+                                              # We'll keep it for now and see if errors arise during testing.
 from Src.Env import python_executor
 from Src.Env.shell import ShellExecutor # Import ShellExecutor
-from Src.llm_interface.llm import MistralModel
-from Src.llm_interface.llm import Groqinference
-from Src.llm_interface.llm import OpenAi
+from Src.llm_interface.llm import LiteLLMInterface # Import LiteLLMInterface
 
 from Src.Tools import tool_manager
 
@@ -44,20 +44,9 @@ class executor:
         self.initialize_llm()
 
     def initialize_llm(self):
-        config_path = os.path.join(os.path.dirname(__file__), '../../../config.json')
-        with open(config_path, "r") as config_file:
-            config = json.load(config_file)
-            llm_provider = config.get("llm_provider", "mistral")
-            
-        
-        if llm_provider.lower() == "mistral":
-            self.llm = MistralModel()
-        elif llm_provider.lower() == "groq":
-            self.llm = Groqinference()
-        elif llm_provider.lower() == "openai":
-            self.llm = OpenAi()
-        else:
-            raise ValueError(f"Unsupported LLM provider: {llm_provider}")
+        # Directly instantiate LiteLLMInterface. 
+        # It handles its own configuration loading (including model_name from config.json).
+        self.llm = LiteLLMInterface()
 
     def get_tool_dir(self):
         # Get the absolute path to the project root directory
@@ -212,23 +201,30 @@ Following are the things that you must read carefully and remember:
             try:
                 self.rate_limiter.wait_if_needed()
 
-                response = self.llm.chat(self.message)
+                response = self.llm.chat(self.message) # LiteLLMInterface.chat() returns the full response string
 
-                # -------------------streaming for mistral ------------------------
-                # for chunk in stream:
-                #     content = chunk.data.choices[0].delta.content
-                #     print(content, end="")
-                #     response += content
+                # Streaming is handled within LiteLLMInterface.chat()
+                # and TerminalInterface.process_markdown_chunk()
                 self.message.append({"role": "assistant", "content": response})
                 return response
 
-            except SDKError as e:
+            except Exception as e: # Catching generic Exception as LiteLLM maps to OpenAI exceptions
+                # Check if the error message contains "429" for rate limiting
                 if "429" in str(e) and retries < self.rate_limiter.max_retries:
                     retries += 1
-                    print(f"\nRate limit exceeded. Waiting {self.rate_limiter.wait_time} seconds before retry {retries}/{self.rate_limiter.max_retries}")
+                    print(f"\nRate limit error detected. Waiting {self.rate_limiter.wait_time} seconds before retry {retries}/{self.rate_limiter.max_retries}")
+                    time.sleep(self.rate_limiter.wait_time)
+                # Check if the error is an SDKError (though less likely with LiteLLM directly)
+                # or if it's any other exception that we should retry or raise.
+                elif isinstance(e, SDKError) and "429" in str(e) and retries < self.rate_limiter.max_retries: # Added SDKError check just in case
+                    retries += 1
+                    print(f"\nRate limit exceeded (SDKError). Waiting {self.rate_limiter.wait_time} seconds before retry {retries}/{self.rate_limiter.max_retries}")
                     time.sleep(self.rate_limiter.wait_time)
                 else:
-                    print(f"\nError occurred: {str(e)}")
+                    print(f"\nError occurred during inference: {str(e)}")
+                    # You might want to log the full traceback here for debugging
+                    # import traceback
+                    # print(traceback.format_exc())
                     raise
         raise Exception("Failed to complete inference after maximum retries")
 

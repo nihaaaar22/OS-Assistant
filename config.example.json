@@ -1,5 +1,5 @@
 {
     "working_directory": "/path/to/your/working/directory",
-    "api_key": "your_api_key_here",
-    "other_setting": "value"
-} 
+    "llm_provider": "openai",
+    "model_name": "openai/gpt-3.5-turbo"
+}
