@@ -3,10 +3,11 @@
 
 import os
 import sys
-import json
 import time
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
 from Src.Utils.ter_interface import TerminalInterface
+from Src.Utils.executor_utils import parse_tool_call, parse_code, parse_shell_command
+from Src.Agents.Executor.prompts import get_system_prompt, get_task_prompt # Import prompts
 
 from typing import Optional
 from mistralai.models.sdkerror import SDKError # This might be an issue if LiteLLM doesn't use SDKError
@@ -55,145 +56,19 @@ class executor:
         with open(tool_dir_path, "r") as file:
             return file.read()
 
-    def parse_tool_call(self, response):
-        if "<<TOOL_CALL>>" in response and "<<END_TOOL_CALL>>" in response:
-            try:
-                start_index = response.find("<<TOOL_CALL>>") + len("<<TOOL_CALL>>")
-                end_index = response.find("<<END_TOOL_CALL>>")
-                json_str = response[start_index:end_index].strip()
-                return json.loads(json_str)#this returns python dictionary
-            except (json.JSONDecodeError, KeyError, ValueError) as e:
-                print(f"Error parsing JSON: {e}")
-                return None
-        return None
-
-    def parse_code(self, response):
-        """Extracts Python code from the response between <<CODE>> delimiters."""
-        if "<<CODE>>" in response:
-            try:
-                start_index = response.find("<<CODE>>") + len("<<CODE>>")
-                end_index = response.find("<<CODE>>", start_index)
-                if end_index != -1:
-                    code_str = response[start_index:end_index].strip()
-                    return code_str
-                else:
-                    print("Error: Could not find both code delimiters in response")
-                    return None
-            except Exception as e:
-                print(f"Error parsing code: {e}")
-                return None
-        return None
-
-    def parse_shell_command(self, response):
-        """Extracts shell commands from the response between <<SHELL_COMMAND>> delimiters."""
-        if "<<SHELL_COMMAND>>" in response:
-            try:
-                start_index = response.find("<<SHELL_COMMAND>>") + len("<<SHELL_COMMAND>>")
-                end_index = response.find("<<END_SHELL_COMMAND>>", start_index)
-                if end_index != -1:
-                    shell_command_str = response[start_index:end_index].strip()
-                    return shell_command_str
-                else:
-                    print("Error: Could not find both shell command delimiters in response")
-                    return None
-            except Exception as e:
-                print(f"Error parsing shell command: {e}")
-                return None
-        return None
-
     def executor_prompt_init(self):
         # Load tools details when initializing prompt
         tools_details = self.get_tool_dir()
 
+        # Read working_directory from config.json
+        # This import needs to be here, or moved to the top if json is used elsewhere
+        import json 
         with open(os.path.join(os.path.dirname(__file__), '../../../config.json'), "r") as config_file:
             config = json.load(config_file)
             working_dir = config.get("working_directory", "")
 
-        self.system_prompt = f"""You are a terminal-based operating system assistant designed to help users achieve their goals by executing tasks provided in text format. The current user goal is: {self.user_prompt}.
-
-Working Directory: {working_dir}
-
-You have access to the following tools:
-{tools_details}
-
-Your primary objective is to accomplish the user's goal by performing step-by-step actions. These actions can include:
-1. Calling a tool
-2. Executing Python code
-3. Executing Shell commands
-4. Providing a direct response
-
-You must break down the user's goal into smaller steps and perform one action at a time. After each action, carefully evaluate the output to determine the next step.
-
-### Action Guidelines:
-- **Tool Call**: Use when a specific tool can help with the current step. Format:
-  <<TOOL_CALL>>
-  {{
-    "tool_name": "name_of_tool",
-    "input": {{
-      "key": "value"   //Replace 'key' with the actual parameter name for the tool
-    }}
-  }}
-  <<END_TOOL_CALL>>
-- **Code Execution**: Write Python code when no tool is suitable or when custom logic is needed. Format:
-  <<CODE>>
-  your_python_code_here
-  <<CODE>>
-- **Shell Command Execution**: Execute shell commands when needed. Format:
-  <<SHELL_COMMAND>>
-  your_shell_command_here
-  <<END_SHELL_COMMAND>>
-- **Direct Response**: Provide a direct answer if the task doesn't require tools or code.
-
-### Important Notes:
-- Perform only one action per step.
-- Always evaluate the output of each action before deciding the next step.
-- Continue performing actions until the user's goal is fully achieved. Only then, include 'TASK_DONE' in your response.
-- Do not end the task immediately after a tool call or code execution without evaluating its output.
-
-Now, carefully plan your approach and start with the first step to achieve the user's goal.
-"""
-
-        self.task_prompt = """
-Following are the things that you must read carefully and remember:
-
-        - For tool calls, use:
-        <<TOOL_CALL>>
-        {
-            "tool_name": "name_of_tool",
-            "input": {
-            "key": "value"  // Use the correct parameter name for each tool
-            }
-        }
-        <<END_TOOL_CALL>>
-
-        - For code execution, use:
-        <<CODE>>
-        your_python_code_here
-        <<CODE>>
-
-        - For shell command execution, use:
-        <<SHELL_COMMAND>>
-        your_shell_command_here
-        <<END_SHELL_COMMAND>>
-
-        After each action, always evaluate the output to decide your next step. Only include 'TASK_DONE'
-        When the entire task is completed. Do not end the task immediately after a tool call or code execution without
-        checking its output. 
-        You can only execute a single tool call or code execution at a time, then check its ouput
-        then proceed with the next call
-        Use the working directory as the current directory for all file operations unless otherwise specified.
-        
-        
-
-        These are the things that you learn't from the mistakes you made earlier :
-
-        - When given a data file and asked to understand data/do data analysis/ data visualisation or similar stuff
-        do not use file reader and read the whole data. Only use python code to do the analysis
-        - This is a standard Python environment, not a python notebook or a repl. previous execution
-         context is not preserved between executions.
-        - You have a get_user_input tool to ask user more context before, in between or after tasks
-
-"""
+        self.system_prompt = get_system_prompt(self.user_prompt, working_dir, tools_details)
+        self.task_prompt = get_task_prompt()
 
     def run_inference(self):
         retries = 0
@@ -244,7 +119,7 @@ Following are the things that you must read carefully and remember:
         while iteration < self.max_iter and not task_done:
             # Check for tool calls
             response = self.run_inference()
-            tool_call = self.parse_tool_call(response)
+            tool_call = parse_tool_call(response)
             if tool_call:
                 print(f"\nCalling tool: {tool_call['tool_name']}")
                 try:
@@ -257,8 +132,8 @@ Following are the things that you must read carefully and remember:
                     self.message.append({"role": "user", "content": f"Tool Error: {error_msg}"})
             
             else: # Not a tool call, check for code or shell command
-                code = self.parse_code(response)
-                shell_command = self.parse_shell_command(response)
+                code = parse_code(response)
+                shell_command = parse_shell_command(response)
 
                 if code:
                     # Ask user for confirmation before executing the code
