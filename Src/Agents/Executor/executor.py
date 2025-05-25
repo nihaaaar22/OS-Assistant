@@ -40,7 +40,10 @@ class executor:
         self.executor_prompt_init()  # Update system_prompt
         self.python_executor = python_executor.PythonExecutor()  # Initialize PythonExecutor
         self.shell_executor = ShellExecutor() # Initialize ShellExecutor
-        self.message = [{"role": "system", "content": self.system_prompt}]
+        self.message = [
+            {"role": "system", "content": self.system_prompt},
+            {"role": "user", "content": self.task_prompt}
+        ]
         self.terminal = TerminalInterface()
         self.initialize_llm()
 
@@ -146,7 +149,7 @@ class executor:
                                 f"Error: {exec_result.get('error', 'Unknown error')}"
                             )
                             print(f"there was an error in the python code execution {exec_result.get('error', 'Unknown error')}")
-                            self.message.append({"role": "system", "content": error_msg})
+                            self.message.append({"role": "user", "content": error_msg})
 
                         elif exec_result['output'] == "":
                             no_output_msg = (
@@ -154,7 +157,7 @@ class executor:
                                 "Please add print statements to show the results. This isn't a jupyter notebook environment. "
                                 "For example: print(your_variable) or print('Your message')"
                             )
-                            self.message.append({"role": "system", "content": no_output_msg})
+                            self.message.append({"role": "user", "content": no_output_msg})
                         
                         #if there is an output (partial or full exeuction)
                         else:
@@ -182,11 +185,11 @@ class executor:
                                 f"Error: {shell_result.get('error', 'Unknown error')}"
                             )
                             print(f"there was an error in the shell command execution {shell_result.get('error', 'Unknown error')}")
-                            self.message.append({"role": "system", "content": error_msg})
+                            self.message.append({"role": "user", "content": error_msg})
 
                         elif shell_result['output'] == "":
                             print("command executed")
-                            self.message.append({"role": "system", "content": "command executed"})
+                            self.message.append({"role": "user", "content": "command executed"})
                         
                         #if there is an output (partial or full execution)
                         else:
@@ -226,7 +229,10 @@ if __name__ == "__main__":
     user_prompt = input("Please enter your prompt: ")
     e1.user_prompt = user_prompt
     e1.executor_prompt_init()  # Update system_prompt
-    e1.message.append({"role": "system", "content": e1.system_prompt})  # Reset message list
+    e1.message = [
+        {"role": "system", "content": e1.system_prompt},
+        {"role": "user", "content": e1.task_prompt}
+    ]  # Reset message list properly
     e1.run()
 
     while True:

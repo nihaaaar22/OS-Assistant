@@ -4,7 +4,7 @@ def get_system_prompt(user_prompt: str, working_dir: str, tools_details: str) ->
     """
     Returns the system prompt for the Executor agent.
     """
-    return f\"\"\"You are a terminal-based operating system assistant designed to help users achieve their goals by executing tasks provided in text format. The current user goal is: {user_prompt}.
+    return f"""You are a terminal-based operating system assistant designed to help users achieve their goals by executing tasks provided in text format. The current user goal is: {user_prompt}.
 
 Working Directory: {working_dir}
 
@@ -46,13 +46,13 @@ You must break down the user's goal into smaller steps and perform one action at
 - Do not end the task immediately after a tool call or code execution without evaluating its output.
 
 Now, carefully plan your approach and start with the first step to achieve the user's goal.
-\"\"\"
+"""
 
 def get_task_prompt() -> str:
     """
     Returns the task prompt for the Executor agent.
     """
-    return \"\"\"
+    return """
 Following are the things that you must read carefully and remember:
 
         - For tool calls, use:
@@ -92,4 +92,4 @@ Following are the things that you must read carefully and remember:
          context is not preserved between executions.
         - You have a get_user_input tool to ask user more context before, in between or after tasks
 
-\"\"\"
+"""

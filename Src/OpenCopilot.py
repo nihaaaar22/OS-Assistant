@@ -14,7 +14,6 @@ class OpenCopilot:
         user_prompt = input("Please enter your prompt: ")
         self.e1 = executor(user_prompt)
         self.e1.executor_prompt_init()  # Initialize the system prompt
-        self.e1.message.append({"role": "system", "content": self.e1.system_prompt})
         self.e1.run()
 
         # Continue conversation loop
