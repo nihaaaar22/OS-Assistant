@@ -40,14 +40,13 @@ class PythonExecutor:
         if not self.basic_code_check(code):
             return {
                 'success': False,
-                'output': 'Error: Code contains potentially unsafe operations.You can try and use tools to achieve same functionality.'
+                'output': 'Error: Code contains potentially unsafe operations. You can try and use tools to achieve same functionality.',
+                'error': 'Security check failed'
             }
 
         # Create a temporary file to store the code
         with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
             # Properly indent the code to fit inside the try block
-            
-            
             indented_code = textwrap.indent(code, '    ')
             # Wrap the indented code to capture output
             wrapped_code = f"""
@@ -65,26 +64,32 @@ except Exception as e:
                 ['python3', temp_file],
                 capture_output=True,
                 text=True,
-
+                timeout=30  # 30 second timeout
             )
 
             return {
                 'success': result.returncode == 0,
-                'output': result.stdout if result.returncode == 0 else result.stderr
+                'output': result.stdout if result.returncode == 0 else result.stderr,
+                'error': result.stderr if result.returncode != 0 else ''
             }
 
         except subprocess.TimeoutExpired:
             return {
                 'success': False,
-                'output': f'Execution timed out after {self.timeout} seconds'
+                'output': 'Execution timed out after 30 seconds',
+                'error': 'Timeout error'
             }
         except Exception as e:
             return {
                 'success': False,
-                'output': f'Error: {str(e)}'
+                'output': f'Error: {str(e)}',
+                'error': str(e)
             }
         finally:
-            # Clean up the temporary fi
-            os.unlink(temp_file)
+            # Clean up the temporary file
+            try:
+                os.unlink(temp_file)
+            except:
+                pass  # Ignore cleanup errors
     
 

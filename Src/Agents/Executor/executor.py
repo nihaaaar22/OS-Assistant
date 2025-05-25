@@ -262,16 +262,16 @@ Following are the things that you must read carefully and remember:
 
                 if code:
                     # Ask user for confirmation before executing the code
-                    user_confirmation = input("Do you want to execute the Python code?\n ")
+                    user_confirmation = input("Do you want to execute the Python code?")
                     if user_confirmation.lower() == 'y':
                         exec_result = self.python_executor.execute(code)
-                        if exec_result['output'] == "" and not exec_result['success']: # if there is an error, output might be empty
+                        if exec_result['output'] == "" and not exec_result['success']:
                             error_msg = (
                                 f"Python execution failed.\n"
-                                f"Error: {exec_result['error']}"
+                                f"Error: {exec_result.get('error', 'Unknown error')}"
                             )
-                            print(error_msg)
-                            self.message.append({"role": "user", "content": error_msg})
+                            print(f"there was an error in the python code execution {exec_result.get('error', 'Unknown error')}")
+                            self.message.append({"role": "system", "content": error_msg})
 
                         elif exec_result['output'] == "":
                             no_output_msg = (
@@ -279,16 +279,20 @@ Following are the things that you must read carefully and remember:
                                 "Please add print statements to show the results. This isn't a jupyter notebook environment. "
                                 "For example: print(your_variable) or print('Your message')"
                             )
-                            self.message.append({"role": "user", "content": no_output_msg})
+                            self.message.append({"role": "system", "content": no_output_msg})
                         
+                        #if there is an output (partial or full exeuction)
                         else:
-                            output_msg = (
-                                f"Python execution {'succeeded. Evaluate if the output is correct and what you needed' if exec_result['success'] else 'failed'}\n"
-                                f"Code Output: {exec_result['output']}\n"
-                                f"Error (if any): {exec_result['error']}\n"
-                            )
-                            print(output_msg)
-                            self.message.append({"role": "user", "content": output_msg})
+                            # First, show the program output
+                            if exec_result['output'].strip():
+                                print(f"Program Output:\n{exec_result['output']}")
+                            
+                            # Then handle success/failure cases
+                            if exec_result['success']:
+                                self.message.append({"role": "user", "content": f"Program Output:\n{exec_result['output']}"})
+                            else:
+                                self.message.append({"role": "user", "content": f"Program Output:\n{exec_result['output']}\n{exec_result.get('error', 'Unknown error')}"})
+    
                     else:
                         self.message.append({"role":"user","content":"User chose not to execute the Python code."})
                         print("Python code execution skipped by the user.")
@@ -297,13 +301,30 @@ Following are the things that you must read carefully and remember:
                     user_confirmation = input(f"Do you want to execute the shell command: '{shell_command}'?\n ")
                     if user_confirmation.lower() == 'y':
                         shell_result = self.shell_executor.execute(shell_command)
-                        output_msg = (
-                            f"Shell command execution {'succeeded' if shell_result['success'] else 'failed'}.\n"
-                            f"Output:\n{shell_result['output']}\n"
-                            f"Error (if any):\n{shell_result['error']}\n"
-                        )
-                        print(output_msg)
-                        self.message.append({"role": "user", "content": output_msg})
+                        if shell_result['output'] == "" and not shell_result['success']:
+                            error_msg = (
+                                f"Shell command execution failed.\n"
+                                f"Error: {shell_result.get('error', 'Unknown error')}"
+                            )
+                            print(f"there was an error in the shell command execution {shell_result.get('error', 'Unknown error')}")
+                            self.message.append({"role": "system", "content": error_msg})
+
+                        elif shell_result['output'] == "":
+                            print("command executed")
+                            self.message.append({"role": "system", "content": "command executed"})
+                        
+                        #if there is an output (partial or full execution)
+                        else:
+                            # First, show the command output
+                            if shell_result['output'].strip():
+                                print(f"Command Output:\n{shell_result['output']}")
+                            
+                            # Then handle success/failure cases
+                            if shell_result['success']:
+                                self.message.append({"role": "user", "content": f"Command Output:\n{shell_result['output']}"})
+                            else:
+                                self.message.append({"role": "user", "content": f"Command Output:\n{shell_result['output']}\n{shell_result.get('error', 'Unknown error')}"})
+    
                     else:
                         self.message.append({"role":"user","content":"User chose not to execute the shell command."})
                         print("Shell command execution skipped by the user.")
