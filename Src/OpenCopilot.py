@@ -17,77 +17,57 @@ from Src.Agents.Executor.executor import executor
 class FilePathCompleter(Completer):
     def get_completions(self, document, complete_event):
         text_before_cursor = document.text_before_cursor
-        
-        # Find the last @ symbol and the path after it
-        path_match = re.search(r'@([^@\s]*)$', text_before_cursor)
+        path_match = self._find_at_path(text_before_cursor)
         if not path_match:
             return
-
         current_path = path_match.group(1)
-        
-        # Handle home directory expansion
-        if current_path.startswith('~'):
-            normalized_path = os.path.expanduser(current_path)
-        else:
-            # If it's a relative path, make it relative to current working directory
-            normalized_path = os.path.abspath(current_path) if os.path.isabs(current_path) else current_path
-        
-        # Determine directory and filename parts
-        if current_path.endswith('/') or (current_path and os.path.isdir(normalized_path)):
-            # If path ends with / or is an existing directory, list its contents
-            dir_path = normalized_path if os.path.isabs(current_path) else os.path.abspath(current_path)
-            base_name = ""
-        else:
-            # Split into directory and filename parts
-            if os.path.isabs(current_path):
-                dir_path = os.path.dirname(normalized_path)
-                base_name = os.path.basename(normalized_path)
-            else:
-                dir_path = os.path.dirname(os.path.abspath(current_path)) if current_path else os.getcwd()
-                base_name = os.path.basename(current_path) if current_path else ""
-
-        # If directory doesn't exist, try current working directory
-        if not os.path.isdir(dir_path):
+        # Only consider files/dirs in current working directory
+        # Support completion for subdirectories and deeper paths
+        # Split current_path into directory and base name
+        dir_path, base_name = os.path.split(current_path)
+        if not dir_path:
             dir_path = os.getcwd()
-            base_name = current_path
-
+        else:
+            # Expand user home and make absolute
+            dir_path = os.path.expanduser(dir_path)
+            if not os.path.isabs(dir_path):
+                dir_path = os.path.abspath(dir_path)
         try:
-            # Get all items in the directory
             items = os.listdir(dir_path)
-            
-            # Filter items that start with the base name (case-insensitive)
             matching_items = [item for item in items if item.lower().startswith(base_name.lower())]
-            
-            # Sort items: directories first, then files
             matching_items.sort(key=lambda x: (not os.path.isdir(os.path.join(dir_path, x)), x.lower()))
-            
             for item in matching_items:
-                full_path = os.path.join(dir_path, item)
-                display_text = item
-                
-                # Add trailing slash for directories
-                if os.path.isdir(full_path):
-                    completion_text = item + '/'
-                    display_text = f"{item}/ (directory)"
-                else:
-                    completion_text = item
-                    # Show file extension info
-                    _, ext = os.path.splitext(item)
-                    if ext:
-                        display_text = f"{item} ({ext[1:]} file)"
-                
-                # Calculate the replacement length
-                start_position = -len(current_path)
-                
-                yield Completion(
-                    text=completion_text,
-                    start_position=start_position,
-                    display=display_text
-                )
-                
+                yield self._create_completion(text_before_cursor,dir_path, item)
         except (OSError, PermissionError):
-            # Handle cases where we can't read the directory
             pass
+
+    def _find_at_path(self, text):
+        """Find the last @ symbol after whitespace and the path after it"""
+        return re.search(r'@([^@\s]*)$', text)
+
+    def _create_completion(self, text_before_cursor, dir_path, item):
+        """Create a Completion object for a given item in the current directory."""
+        full_path = os.path.join(dir_path, item)
+        # Only the completed path after '@' should be inserted
+        if os.path.isdir(full_path):
+            completion_text = f"{item}/"
+            display_text = f"{item}/ (directory)"
+        else:
+            _, ext = os.path.splitext(item)
+            completion_text = f"{item}"
+            if ext:
+                display_text = f"{item} ({ext[1:]} file)"
+            else:
+                display_text = f"{item}"
+        if '/' in text_before_cursor[text_before_cursor.rindex('@'):]:
+            start_position = -(len(text_before_cursor) - text_before_cursor.rindex('/') - 1)
+        else:
+            start_position = -(len(text_before_cursor) - text_before_cursor.rindex('@') - 1)
+        return Completion(
+            text=completion_text,
+            start_position=start_position,
+            display=display_text
+        )
 
 class OpenCopilot:
     def __init__(self):
@@ -109,31 +89,38 @@ class OpenCopilot:
             if not os.path.isabs(expanded_path):
                 expanded_path = os.path.abspath(expanded_path)
             
-            if os.path.exists(expanded_path) and os.path.isfile(expanded_path):
-                try:
-                    with open(expanded_path, 'r', encoding='utf-8') as f:
-                        content = f.read()
-                    
-                    # Add file content with clear formatting
-                    file_contents.append(f"=== Content of file: {expanded_path} ===\n{content}\n=== End of file: {expanded_path} ===\n")
-                    
-                    # Remove the @file pattern from the processed prompt
-                    processed_prompt = processed_prompt.replace(f"@{file_path}", "")
-                    
+            if os.path.exists(expanded_path):
+                if os.path.isfile(expanded_path):
+                    try:
+                        with open(expanded_path, 'r', encoding='utf-8') as f:
+                            content = f.read()
+                        
+                        # Add file content with clear formatting
+                        file_contents.append(f"=== Content of file: {expanded_path} ===\n{content}\n=== End of file: {expanded_path} ===\n")
+                        print(f"=== Content of file: {expanded_path} ===\n{content}\n=== End of file: {expanded_path} ===\n")
+                        # Remove the @file pattern from the processed prompt
+                        processed_prompt = processed_prompt.replace(f"@{file_path}", "")
+                        
+                        print_formatted_text(FormattedText([
+                            ('class:success', f"✓ Loaded file: {expanded_path}")
+                        ]))
+                        
+                    except Exception as e:
+                        print_formatted_text(FormattedText([
+                            ('class:error', f"✗ Error reading file {expanded_path}: {str(e)}")
+                        ]))
+                else:
+                    # For directories, just append the path to the processed prompt
+                    processed_prompt = processed_prompt.replace(f"@{file_path}", expanded_path)
                     print_formatted_text(FormattedText([
-                        ('class:success', f"✓ Loaded file: {expanded_path}")
-                    ]))
-                    
-                except Exception as e:
-                    print_formatted_text(FormattedText([
-                        ('class:error', f"✗ Error reading file {expanded_path}: {str(e)}")
+                        ('class:success', f"✓ Added directory path: {expanded_path}")
                     ]))
             else:
                 print_formatted_text(FormattedText([
-                    ('class:warning', f"⚠ File not found: {expanded_path}")
+                    ('class:warning', f"⚠ Path not found: {expanded_path}")
                 ]))
         
-        # Combine file contents with the processed prompt
+        # Combine file contents with the processed prompt. will have the files first content and then the user prompt
         if file_contents:
             final_prompt = "\n".join(file_contents) + "\n" + processed_prompt.strip()
             print_formatted_text(FormattedText([
