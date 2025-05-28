@@ -1,12 +1,16 @@
 # This file contains the prompts used by the Executor agent.
 
+import platform
+
 def get_system_prompt(user_prompt: str, working_dir: str, tools_details: str) -> str:
     """
     Returns the system prompt for the Executor agent.
     """
+    os_name = platform.system()
     return f"""You are a terminal-based operating system assistant designed to help users achieve their goals by executing tasks provided in text format. The current user goal is: {user_prompt}.
 
 Working Directory: {working_dir}
+Operating System: {os_name}
 
 You have access to the following tools:
 {tools_details}
