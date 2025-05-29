@@ -5,19 +5,19 @@ import os
 import sys
 import time
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
-from Src.Utils.ter_interface import TerminalInterface
-from Src.Utils.executor_utils import parse_tool_call, parse_code, parse_shell_command
-from Src.Agents.Executor.prompts import get_system_prompt, get_task_prompt # Import prompts
+from Utils.ter_interface import TerminalInterface
+from Utils.executor_utils import parse_tool_call, parse_code, parse_shell_command
+from Agents.Executor.prompts import get_system_prompt, get_task_prompt # Import prompts
 
 from typing import Optional
 from mistralai.models.sdkerror import SDKError # This might be an issue if LiteLLM doesn't use SDKError
                                               # LiteLLM maps exceptions to OpenAI exceptions.
                                               # We'll keep it for now and see if errors arise during testing.
-from Src.Env import python_executor
-from Src.Env.shell import ShellExecutor # Import ShellExecutor
-from Src.llm_interface.llm import LiteLLMInterface # Import LiteLLMInterface
+from Env import python_executor
+from Env.shell import ShellExecutor # Import ShellExecutor
+from llm_interface.llm import LiteLLMInterface # Import LiteLLMInterface
 
-from Src.Tools import tool_manager
+from Tools import tool_manager
 
 class RateLimiter:
     def __init__(self, wait_time: float = 5.0, max_retries: int = 3):
@@ -53,9 +53,8 @@ class executor:
         self.llm = LiteLLMInterface()
 
     def get_tool_dir(self):
-        # Get the absolute path to the project root directory
-        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../'))
-        tool_dir_path = os.path.join(project_root, 'Src', 'Tools', 'tool_dir.json')
+        import pkg_resources
+        tool_dir_path = pkg_resources.resource_filename('Tools', 'tool_dir.json')
         with open(tool_dir_path, "r") as file:
             return file.read()
 

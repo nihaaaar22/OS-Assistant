@@ -7,12 +7,7 @@ from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit.shortcuts import print_formatted_text
 from prompt_toolkit.formatted_text import FormattedText
 
-# Add the parent directory to the path to enable imports
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
-
-from Src.Agents.Executor.executor import executor
-
-# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
+from Agents.Executor.executor import executor
 
 class FilePathCompleter(Completer):
     def get_completions(self, document, complete_event):
@@ -34,7 +29,9 @@ class FilePathCompleter(Completer):
                 dir_path = os.path.abspath(dir_path)
         try:
             items = os.listdir(dir_path)
-            matching_items = [item for item in items if item.lower().startswith(base_name.lower())]
+            # Filter out hidden files and folders (those starting with .)
+            visible_items = [item for item in items if not item.startswith('.')]
+            matching_items = [item for item in visible_items if item.lower().startswith(base_name.lower())]
             matching_items.sort(key=lambda x: (not os.path.isdir(os.path.join(dir_path, x)), x.lower()))
             for item in matching_items:
                 yield self._create_completion(text_before_cursor,dir_path, item)
@@ -48,21 +45,26 @@ class FilePathCompleter(Completer):
     def _create_completion(self, text_before_cursor, dir_path, item):
         """Create a Completion object for a given item in the current directory."""
         full_path = os.path.join(dir_path, item)
+        # Get relative path from current working directory
+        rel_path = os.path.relpath(full_path)
+        
         # Only the completed path after '@' should be inserted
         if os.path.isdir(full_path):
-            completion_text = f"{item}/"
+            completion_text = f"{rel_path}/"
             display_text = f"{item}/ (directory)"
         else:
             _, ext = os.path.splitext(item)
-            completion_text = f"{item}"
+            completion_text = f"{rel_path}"
             if ext:
                 display_text = f"{item} ({ext[1:]} file)"
             else:
                 display_text = f"{item}"
-        if '/' in text_before_cursor[text_before_cursor.rindex('@'):]:
-            start_position = -(len(text_before_cursor) - text_before_cursor.rindex('/') - 1)
-        else:
-            start_position = -(len(text_before_cursor) - text_before_cursor.rindex('@') - 1)
+                
+        # if '/' in text_before_cursor[text_before_cursor.rindex('@'):]:
+        #     start_position = -(len(text_before_cursor) - text_before_cursor.rindex('/') - 1)
+        # else:
+        start_position = -(len(text_before_cursor) - text_before_cursor.rindex('@') - 1)
+            
         return Completion(
             text=completion_text,
             start_position=start_position,
@@ -97,7 +99,6 @@ class OpenCopilot:
                         
                         # Add file content with clear formatting
                         file_contents.append(f"=== Content of file: {expanded_path} ===\n{content}\n=== End of file: {expanded_path} ===\n")
-                        print(f"=== Content of file: {expanded_path} ===\n{content}\n=== End of file: {expanded_path} ===\n")
                         # Remove the @file pattern from the processed prompt
                         processed_prompt = processed_prompt.replace(f"@{file_path}", "")
                         
@@ -235,7 +236,8 @@ Examples:
     def list_available_tools():
         """List all available tools."""
         try:
-            tool_dir_path = os.path.join(os.path.dirname(__file__), 'Tools/tool_dir.json')
+            import pkg_resources
+            tool_dir_path = pkg_resources.resource_filename('Tools', 'tool_dir.json')
             with open(tool_dir_path, 'r') as f:
                 tools = json.load(f)
             return tools

@@ -1,11 +1,12 @@
 import sys
 import os
+import json
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
-from Src.Tools.web_loader import load_data
-from Src.Tools.web_search import web_search
-from Src.Tools.file_task import file_reader, file_maker, file_writer, directory_maker
-from Src.Tools.system_details import get_os_details, get_datetime, get_memory_usage, get_cpu_info
-from Src.Tools.userinp import get_user_input
+from Tools.web_loader import load_data
+from Tools.web_search import web_search
+from Tools.file_task import file_reader, file_maker, file_writer, directory_maker
+from Tools.system_details import get_os_details, get_datetime, get_memory_usage, get_cpu_info
+from Tools.userinp import get_user_input
 
 #need to transform it into map of dictionary
 #name : [function : xyz,description : blah bah]

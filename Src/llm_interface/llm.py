@@ -10,7 +10,7 @@ import litellm # Added import for litellm
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
-from Src.Utils.ter_interface import TerminalInterface
+from Utils.ter_interface import TerminalInterface
 
 
 # Load environment variables from .env file

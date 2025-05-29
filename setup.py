@@ -3,9 +3,13 @@ from pathlib import Path
 
 setup(
     name="PikoAi",
-    version="0.1.0",
+    version="0.1.5",
     packages=find_packages(where="Src"),
+    py_modules=["cli", "OpenCopilot"],
     package_dir={"": "Src"},
+    package_data={
+        "Tools": ["tool_dir.json"],
+    },
     include_package_data=True,
     install_requires=[
         "python-dotenv>=1.0.1",
