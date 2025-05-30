@@ -296,5 +296,64 @@ def list_models():
         for model_name_full in model_list: # model_name_full is "openai/gpt-4o", etc.
             click.echo(f"  - {model_name_full}")
 
+@cli.command('set-api-key')
+@click.option('--provider', '-p', type=click.Choice(list(AVAILABLE_MODELS.keys())), 
+              help='The LLM provider to set API key for')
+@click.option('--key', '-k', help='The API key to set (if not provided, will prompt for it)')
+def set_api_key(provider, key):
+    """Set or update API key for a specific LLM provider"""
+    if not provider:
+        # If no provider specified, ask user to choose
+        questions = [
+            inquirer.List('provider_key',
+                message="Select LLM Provider to update API key",
+                choices=list(AVAILABLE_MODELS.keys())
+            )
+        ]
+        provider = inquirer.prompt(questions)['provider_key']
+    
+    # Get the environment variable name for this provider
+    env_var = API_KEYS.get(provider)
+    if not env_var:
+        raise ValueError(f"Unknown provider: {provider}")
+    
+    # Get the API key (either from command line or prompt)
+    if not key:
+        questions = [
+            inquirer.Text('api_key',
+                message=f"Enter your {provider.upper()} API key",
+                validate=lambda _, x: len(x.strip()) > 0
+            )
+        ]
+        key = inquirer.prompt(questions)['api_key']
+    
+    # Get the path to .env file
+    env_path = os.path.join(os.path.dirname(__file__), '../.env')
+    
+    # Read existing .env file if it exists
+    lines = []
+    if os.path.exists(env_path):
+        with open(env_path, 'r') as f:
+            lines = f.readlines()
+    
+    # Update or add the API key
+    key_line = f"{env_var}={key}\n"
+    key_exists = False
+    
+    for i, line in enumerate(lines):
+        if line.strip().startswith(f"{env_var}=") or line.strip().startswith(f"#{env_var}="):
+            lines[i] = key_line
+            key_exists = True
+            break
+    
+    if not key_exists:
+        lines.append(key_line)
+    
+    # Write back to .env file
+    with open(env_path, 'w') as f:
+        f.writelines(lines)
+    
+    click.echo(f"API key for {provider.upper()} has been updated successfully in {env_path}")
+
 if __name__ == '__main__':
     cli() 

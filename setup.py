@@ -3,7 +3,7 @@ from pathlib import Path
 
 setup(
     name="PikoAi",
-    version="0.1.5",
+    version="0.1.8",
     packages=find_packages(where="Src"),
     py_modules=["cli", "OpenCopilot"],
     package_dir={"": "Src"},
@@ -32,6 +32,7 @@ setup(
     entry_points={
         'console_scripts': [
             'piko=cli:cli',
+            'pikoai=cli:cli',
         ],
     },
     author="Nihar S",

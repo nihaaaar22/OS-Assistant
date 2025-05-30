@@ -20,6 +20,7 @@ import tempfile
 import os
 from typing import Dict
 import textwrap
+import sys
 
 class PythonExecutor:
     def __init__(self):
@@ -61,7 +62,7 @@ except Exception as e:
         try:
             # Execute the code in a subprocess
             result = subprocess.run(
-                ['python3', temp_file],
+                [sys.executable, temp_file],
                 capture_output=True,
                 text=True,
                 timeout=30  # 30 second timeout
