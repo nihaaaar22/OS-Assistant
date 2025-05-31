@@ -7,6 +7,7 @@ from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit.shortcuts import print_formatted_text
 from prompt_toolkit.formatted_text import FormattedText
 
+from Tools.file_task import file_reader
 from Agents.Executor.executor import executor
 
 class FilePathCompleter(Completer):
@@ -93,10 +94,11 @@ class OpenCopilot:
             
             if os.path.exists(expanded_path):
                 if os.path.isfile(expanded_path):
-                    try:
-                        with open(expanded_path, 'r', encoding='utf-8') as f:
-                            content = f.read()
-                        
+                    # Call file_reader to get file content
+                    file_read_result = file_reader(file_path=expanded_path)
+                    
+                    if file_read_result["success"]:
+                        content = file_read_result["output"]
                         # Add file content with clear formatting
                         file_contents.append(f"=== Content of file: {expanded_path} ===\n{content}\n=== End of file: {expanded_path} ===\n")
                         # Remove the @file pattern from the processed prompt
@@ -105,10 +107,10 @@ class OpenCopilot:
                         print_formatted_text(FormattedText([
                             ('class:success', f"✓ Loaded file: {expanded_path}")
                         ]))
-                        
-                    except Exception as e:
+                    else:
+                        error_message = file_read_result["output"]
                         print_formatted_text(FormattedText([
-                            ('class:error', f"✗ Error reading file {expanded_path}: {str(e)}")
+                            ('class:error', f"✗ Error reading file {expanded_path}: {error_message}")
                         ]))
                 else:
                     # For directories, just append the path to the processed prompt
