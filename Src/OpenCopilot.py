@@ -6,9 +6,39 @@ from prompt_toolkit import PromptSession, HTML
 from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit.shortcuts import print_formatted_text
 from prompt_toolkit.formatted_text import FormattedText
+from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.application.current import get_app
 
 from Tools.file_task import file_reader
 from Agents.Executor.executor import executor
+
+# Custom key bindings for handling Enter key
+kb = KeyBindings()
+
+@kb.add('enter')
+def handle_enter(event):
+    """Handle Enter key press based on completion state"""
+    buff = event.current_buffer
+    app = get_app()
+    
+    # If completion menu is open, select the current completion
+    if app.current_buffer.complete_state:
+        # Get the current completion
+        current_completion = app.current_buffer.complete_state.current_completion
+        if current_completion:
+            # Get the text before cursor
+            text_before_cursor = buff.text[:buff.cursor_position]
+            # Find the last @ symbol
+            last_at_pos = text_before_cursor.rindex('@')
+            # Delete text from @ to cursor position
+            buff.delete_before_cursor(count=buff.cursor_position - last_at_pos - 1)
+            # Insert the completion
+            buff.insert_text(current_completion.text)
+        # Close the completion menu
+        buff.complete_state = None
+    else:
+        # If no completion menu, submit the command
+        buff.validate_and_handle()
 
 class FilePathCompleter(Completer):
     def get_completions(self, document, complete_event):
@@ -75,7 +105,12 @@ class FilePathCompleter(Completer):
 class OpenCopilot:
     def __init__(self):
         self.e1 = None  # Initialize as None, will be set in run()
-        self.session = PromptSession(completer=FilePathCompleter())
+        # Initialize session with custom key bindings
+        self.session = PromptSession(
+            completer=FilePathCompleter(),
+            key_bindings=kb,  # Add custom key bindings
+            complete_while_typing=True  # Enable completion while typing
+        )
 
     def extract_files_and_process_prompt(self, user_input):
         """Extract file paths from @ commands and process the prompt."""
