@@ -21,9 +21,12 @@ import os
 from typing import Dict
 import textwrap
 import sys
+from Src.Env.base_env import BaseEnv
 
-class PythonExecutor:
+class PythonExecutor(BaseEnv):
     def __init__(self):
+        super().__init__()
+        self.process = None
         self.forbidden_terms = [
             'import os', 'import sys', 'import subprocess',
             'open(', 'exec(', 'eval(',
@@ -34,11 +37,11 @@ class PythonExecutor:
         code_lower = code.lower()
         return not any(term.lower() in code_lower for term in self.forbidden_terms)
 
-    def execute(self, code: str) -> Dict[str, str]:
+    def execute(self, code_or_command: str) -> Dict[str, str]:
         """Executes Python code in a separate process and returns the result"""
         
         # Basic safety check
-        if not self.basic_code_check(code):
+        if not self.basic_code_check(code_or_command):
             return {
                 'success': False,
                 'output': 'Error: Code contains potentially unsafe operations. You can try and use tools to achieve same functionality.',
@@ -48,7 +51,7 @@ class PythonExecutor:
         # Create a temporary file to store the code
         with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
             # Properly indent the code to fit inside the try block
-            indented_code = textwrap.indent(code, '    ')
+            indented_code = textwrap.indent(code_or_command, '    ')
             # Wrap the indented code to capture output
             wrapped_code = f"""
 try:
@@ -61,20 +64,24 @@ except Exception as e:
 
         try:
             # Execute the code in a subprocess
-            result = subprocess.run(
+            self.process = subprocess.Popen(
                 [sys.executable, temp_file],
-                capture_output=True,
-                text=True,
-                timeout=30  # 30 second timeout
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
             )
+            stdout, stderr = self.process.communicate(timeout=30) # 30 second timeout
+            returncode = self.process.returncode
 
             return {
-                'success': result.returncode == 0,
-                'output': result.stdout if result.returncode == 0 else result.stderr,
-                'error': result.stderr if result.returncode != 0 else ''
+                'success': returncode == 0,
+                'output': stdout if returncode == 0 else stderr,
+                'error': stderr if returncode != 0 else ''
             }
 
         except subprocess.TimeoutExpired:
+            if self.process:
+                self.process.kill() # Ensure process is killed on timeout
             return {
                 'success': False,
                 'output': 'Execution timed out after 30 seconds',
@@ -87,10 +94,22 @@ except Exception as e:
                 'error': str(e)
             }
         finally:
+            self.process = None # Reset process
             # Clean up the temporary file
             try:
                 os.unlink(temp_file)
             except:
                 pass  # Ignore cleanup errors
-    
+
+    def stop_execution(self):
+        if self.process and hasattr(self.process, 'pid') and self.process.pid is not None:
+            try:
+                self.process.terminate()
+                print(f"Attempted to terminate Python process with PID: {self.process.pid}")
+            except Exception as e:
+                print(f"Error terminating Python process with PID {self.process.pid}: {e}")
+            finally:
+                self.process = None
+        else:
+            print("No active Python process to stop.")
 
