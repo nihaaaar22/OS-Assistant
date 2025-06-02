@@ -13,8 +13,10 @@ from typing import Optional
 from mistralai.models.sdkerror import SDKError # This might be an issue if LiteLLM doesn't use SDKError
                                               # LiteLLM maps exceptions to OpenAI exceptions.
                                               # We'll keep it for now and see if errors arise during testing.
-from Env import python_executor
-from Env.shell import ShellExecutor # Import ShellExecutor
+# from Env import python_executor # Will be replaced by BaseEnv
+# from Env.shell import ShellExecutor # Will be replaced by BaseEnv
+from Src.Env.base_env import create_environment, BaseEnv # Added
+from Env import python_executor # Keep for type hint in the old execute method if needed, or remove if execute is fully removed
 from llm_interface.llm import LiteLLMInterface # Import LiteLLMInterface
 
 from Tools import tool_manager
@@ -38,8 +40,8 @@ class executor:
         self.max_iter = max_iter
         self.rate_limiter = RateLimiter(wait_time=5.0, max_retries=3)
         self.executor_prompt_init()  # Update system_prompt
-        self.python_executor = python_executor.PythonExecutor()  # Initialize PythonExecutor
-        self.shell_executor = ShellExecutor() # Initialize ShellExecutor
+        # self.python_executor = python_executor.PythonExecutor()  # Initialize PythonExecutor
+        # self.shell_executor = ShellExecutor() # Initialize ShellExecutor
         self.message = [
             {"role": "system", "content": self.system_prompt},
             {"role": "user", "content": self.task_prompt}
@@ -141,7 +143,8 @@ class executor:
                     # Ask user for confirmation before executing the code
                     user_confirmation = input("Do you want to execute the Python code?")
                     if user_confirmation.lower() == 'y':
-                        exec_result = self.python_executor.execute(code)
+                        python_env = create_environment("python")
+                        exec_result = python_env.execute(code_or_command=code) # Use named argument for clarity
                         if exec_result['output'] == "" and not exec_result['success']:
                             error_msg = (
                                 f"Python execution failed.\n"
@@ -177,7 +180,8 @@ class executor:
                 elif shell_command:
                     user_confirmation = input(f"Do you want to execute the shell command: '{shell_command}'?\n ")
                     if user_confirmation.lower() == 'y':
-                        shell_result = self.shell_executor.execute(shell_command)
+                        shell_env = create_environment("shell")
+                        shell_result = shell_env.execute(code_or_command=shell_command) # Use named argument for clarity
                         if shell_result['output'] == "" and not shell_result['success']:
                             error_msg = (
                                 f"Shell command execution failed.\n"
@@ -218,24 +222,26 @@ class executor:
         if not task_done:
             print(f"Task could not be completed within {self.max_iter} iterations.")
 
-    def execute(self, code: str, exec_env: python_executor.PythonExecutor):
-        """Executes the given Python code using the provided execution environment."""
-        result = exec_env.execute(code)
-        return result
+    # This method is superseded by the BaseEnv approach in run_task
+    # def execute(self, code: str, exec_env: python_executor.PythonExecutor):
+    #     """Executes the given Python code using the provided execution environment."""
+    #     result = exec_env.execute(code)
+    #     return result
 
 if __name__ == "__main__":
-    e1 = executor("")
-    user_prompt = input("Please enter your prompt: ")
-    e1.user_prompt = user_prompt
-    e1.executor_prompt_init()  # Update system_prompt
-    e1.message = [
-        {"role": "system", "content": e1.system_prompt},
-        {"role": "user", "content": e1.task_prompt}
-    ]  # Reset message list properly
-    e1.run()
+    # e1 = executor("") # Commenting out example usage for now as it might need adjustment
+    # user_prompt = input("Please enter your prompt: ")
+    # e1.user_prompt = user_prompt
+    # e1.executor_prompt_init()  # Update system_prompt
+    # e1.message = [
+    #     {"role": "system", "content": e1.system_prompt},
+    #     {"role": "user", "content": e1.task_prompt}
+    # ]  # Reset message list properly
+    # e1.run()
 
-    while True:
-        user_prompt = input("Please enter your prompt: ")
-        e1.message.append({"role": "user", "content": user_prompt})
-        # e1.message.append({"role":"user","content":e1.system_prompt})
-        e1.run()
+    # while True:
+    #     user_prompt = input("Please enter your prompt: ")
+    #     e1.message.append({"role": "user", "content": user_prompt})
+    #     # e1.message.append({"role":"user","content":e1.system_prompt})
+    #     e1.run()
+    pass # Placeholder if main execution is commented out

@@ -1,12 +1,16 @@
 import subprocess
+from Src.Env.base_env import BaseEnv
 
-class ShellExecutor:
-    def execute(self, command: str) -> dict:
+class ShellExecutor(BaseEnv):
+    def __init__(self):
+        super().__init__()
+
+    def execute(self, code_or_command: str) -> dict:
         """
         Executes a shell command and captures its output, error, and success status.
 
         Args:
-            command: The shell command to execute.
+            code_or_command: The shell command to execute.
 
         Returns:
             A dictionary with the following keys:
@@ -16,7 +20,7 @@ class ShellExecutor:
         """
         try:
             process = subprocess.run(
-                command,
+                code_or_command,
                 shell=True,
                 capture_output=True,
                 text=True,
@@ -33,6 +37,12 @@ class ShellExecutor:
                 "error": str(e),
                 "success": False,
             }
+
+    def stop_execution(self):
+        print("Stopping shell command is not fully implemented")
+        # In a real scenario, you might try to find and kill the process
+        # using self.process.terminate() or self.process.kill()
+        # For now, this is a placeholder.
 
 if __name__ == '__main__':
     # Example usage (optional, for testing)
