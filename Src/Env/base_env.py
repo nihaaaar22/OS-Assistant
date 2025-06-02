@@ -18,8 +18,8 @@ class BaseEnv:
 def create_environment(language):
     if language == "python":
         return PythonExecutor()
-    elif language == "javascript":
-        return JavaScriptExecutor()
+    elif language == "shell":
+        return ShellExecutor()
     else:
         raise ValueError(f"Unsupported language: {language}")
     
