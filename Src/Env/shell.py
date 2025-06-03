@@ -1,13 +1,16 @@
 import subprocess
+import time
+import sys
 from Src.Env.base_env import BaseEnv
 
 class ShellExecutor(BaseEnv):
     def __init__(self):
         super().__init__()
+        self.process = None
 
     def execute(self, code_or_command: str) -> dict:
         """
-        Executes a shell command and captures its output, error, and success status.
+        Executes a shell command and streams its output in real-time.
 
         Args:
             code_or_command: The shell command to execute.
@@ -19,30 +22,78 @@ class ShellExecutor(BaseEnv):
             - 'success': A boolean indicating whether the command executed successfully.
         """
         try:
-            process = subprocess.run(
+            # Execute the command in a subprocess
+            self.process = subprocess.Popen(
                 code_or_command,
                 shell=True,
-                capture_output=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
                 text=True,
-                check=False  # Don't raise an exception on non-zero exit codes
+                bufsize=1,  # Line buffered
+                universal_newlines=True
             )
+            
+            stdout_data = []
+            stderr_data = []
+            start_time = time.time()
+            
+            # First read all stdout
+            for line in self.process.stdout:
+                # Check for timeout
+                if time.time() - start_time > 30:
+                    self.process.kill()
+                    return {
+                        'success': False,
+                        'output': 'Execution timed out after 30 seconds',
+                        'error': 'Timeout error'
+                    }
+                
+                stdout_data.append(line)
+                print(line, end='', flush=True)  # Print in real-time
+            
+            # Then read all stderr
+            for line in self.process.stderr:
+                # Check for timeout
+                if time.time() - start_time > 30:
+                    self.process.kill()
+                    return {
+                        'success': False,
+                        'output': 'Execution timed out after 30 seconds',
+                        'error': 'Timeout error'
+                    }
+                
+                stderr_data.append(line)
+                print(line, end='', file=sys.stderr, flush=True)  # Print in real-time
+            
+            # Wait for process to complete
+            returncode = self.process.wait()
+            
             return {
-                "output": process.stdout,
-                "error": process.stderr,
-                "success": process.returncode == 0,
-            }
-        except Exception as e:
-            return {
-                "output": "",
-                "error": str(e),
-                "success": False,
+                'success': returncode == 0,
+                'output': ''.join(stdout_data) if returncode == 0 else ''.join(stderr_data),
+                'error': ''.join(stderr_data) if returncode != 0 else ''
             }
 
+        except Exception as e:
+            return {
+                'success': False,
+                'output': f'Error: {str(e)}',
+                'error': str(e)
+            }
+        finally:
+            self.process = None  # Reset process
+
     def stop_execution(self):
-        print("Stopping shell command is not fully implemented")
-        # In a real scenario, you might try to find and kill the process
-        # using self.process.terminate() or self.process.kill()
-        # For now, this is a placeholder.
+        if self.process and hasattr(self.process, 'pid') and self.process.pid is not None:
+            try:
+                self.process.terminate()
+                print(f"Attempted to terminate shell process with PID: {self.process.pid}")
+            except Exception as e:
+                print(f"Error terminating shell process with PID {self.process.pid}: {e}")
+            finally:
+                self.process = None
+        else:
+            print("No active shell process to stop.")
 
 if __name__ == '__main__':
     # Example usage (optional, for testing)
