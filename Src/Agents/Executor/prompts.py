@@ -17,9 +17,7 @@ You have access to the following tools:
 
 Your primary objective is to accomplish the user's goal by performing step-by-step actions. These actions can include:
 1. Calling a tool
-2. Executing Python code
-3. Executing Shell commands
-4. Providing a direct response
+2. Providing a direct response
 
 You must break down the user's goal into smaller steps and perform one action at a time. After each action, carefully evaluate the output to determine the next step.
 
@@ -33,14 +31,9 @@ You must break down the user's goal into smaller steps and perform one action at
     }}
   }}
   <<END_TOOL_CALL>>
-- **Code Execution**: Write Python code when no tool is suitable or when custom logic is needed. Format:
-  <<CODE>>
-  your_python_code_here
-  <<CODE>>
-- **Shell Command Execution**: Execute shell commands when needed. Format:
-  <<SHELL_COMMAND>>
-  your_shell_command_here
-  <<END_SHELL_COMMAND>>
+  This includes executing Python code and shell commands:
+  `execute_python_code`: {{"code": "your_python_code_here"}}
+  `execute_shell_command`: {{"command": "your_shell_command_here"}}
 - **Direct Response**: Provide a direct answer if the task doesn't require tools or code.
 
 ### Important Notes:
@@ -68,16 +61,7 @@ Following are the things that you must read carefully and remember:
             }
         }
         <<END_TOOL_CALL>>
-
-        - For code execution, use:
-        <<CODE>>
-        your_python_code_here
-        <<CODE>>
-
-        - For shell command execution, use:
-        <<SHELL_COMMAND>>
-        your_shell_command_here
-        <<END_SHELL_COMMAND>>
+        Remember that executing Python code and shell commands is now done through specific tool calls (`execute_python_code` and `execute_shell_command`).
 
         After each action, always evaluate the output to decide your next step. Only include 'TASK_DONE'
         When the entire task is completed. Do not end the task immediately after a tool call or code execution without

@@ -7,6 +7,8 @@ from Tools.web_search import web_search
 from Tools.file_task import file_reader, file_maker, file_writer, directory_maker
 from Tools.system_details import get_os_details, get_datetime, get_memory_usage, get_cpu_info
 from Tools.userinp import get_user_input
+from Src.Env.python_executor import PythonExecutor
+from Src.Env.shell import ShellExecutor
 
 #need to transform it into map of dictionary
 #name : [function : xyz,description : blah bah]
@@ -22,10 +24,27 @@ tools_function_map = {
     "get_datetime": get_datetime,
     "get_memory_usage": get_memory_usage,
     "get_cpu_info": get_cpu_info,
-    "get_user_input": get_user_input
+    "get_user_input": get_user_input,
+    "execute_python_code": execute_python_code_tool,
+    "execute_shell_command": execute_shell_command_tool,
 }
 
 
+def execute_python_code_tool(code: str) -> dict:
+    """
+    Executes the given Python code and returns the result.
+    """
+    executor = PythonExecutor()
+    result = executor.execute(code)
+    return result
+
+def execute_shell_command_tool(command: str) -> dict:
+    """
+    Executes the given shell command and returns the result.
+    """
+    executor = ShellExecutor()
+    result = executor.execute(command)
+    return result
 
 def call_tool(tool_name, tool_input):
     """
