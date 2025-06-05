@@ -6,7 +6,7 @@ import sys
 import time
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
 from Utils.ter_interface import TerminalInterface
-from Utils.executor_utils import parse_tool_call, parse_code, parse_shell_command
+from Utils.executor_utils import parse_tool_call
 from Agents.Executor.prompts import get_system_prompt, get_task_prompt # Import prompts
 
 from typing import Optional
@@ -130,85 +130,16 @@ class executor:
                 tool_input = tool_call['input']
                 print(f"\nIdentified tool call: {tool_name} with input {tool_input}")
 
-                if tool_name == 'execute_python_code':
-                    code_to_execute = tool_input.get('code')
-                    if not code_to_execute:
-                        self.message.append({"role": "user", "content": "Tool Error: 'code' parameter missing for execute_python_code."})
-                    else:
-                        user_confirmation = input(f"Do you want to execute this Python code snippet?\n```python\n{code_to_execute}\n```\n(y/n): ")
-                        if user_confirmation.lower() == 'y':
-                            tool_output = tool_manager.call_tool(tool_name, tool_input)
-                            self.terminal.tool_output_log(tool_output, tool_name) # tool_output is a dict
-
-                            if tool_output['output'] == "" and not tool_output['success']:
-                                error_msg = (
-                                    f"Python execution failed.\n"
-                                    f"Error: {tool_output.get('error', 'Unknown error')}"
-                                )
-                                print(f"There was an error in the python code execution: {tool_output.get('error', 'Unknown error')}")
-                                self.message.append({"role": "user", "content": error_msg})
-                            elif tool_output['output'] == "":
-                                no_output_msg = (
-                                    "Python execution completed but no output was produced. "
-                                    "Ensure your code includes print() statements to show results."
-                                )
-                                self.message.append({"role": "user", "content": no_output_msg})
-                            else:
-                                if tool_output['output'].strip():
-                                    print(f"Program Output:\n{tool_output['output']}")
-                                if tool_output['success']:
-                                    self.message.append({"role": "user", "content": f"Program Output:\n{tool_output['output']}"})
-                                else:
-                                    self.message.append({"role": "user", "content": f"Program Output:\n{tool_output['output']}\nError: {tool_output.get('error', 'Unknown error')}"})
-                        else:
-                            self.message.append({"role": "user", "content": "User chose not to execute the Python code."})
-                            print("Python code execution skipped by the user.")
-
-                elif tool_name == 'execute_shell_command':
-                    command_to_execute = tool_input.get('command')
-                    if not command_to_execute:
-                        self.message.append({"role": "user", "content": "Tool Error: 'command' parameter missing for execute_shell_command."})
-                    else:
-                        user_confirmation = input(f"Do you want to execute the shell command: '{command_to_execute}'? (y/n): ")
-                        if user_confirmation.lower() == 'y':
-                            tool_output = tool_manager.call_tool(tool_name, tool_input)
-                            self.terminal.tool_output_log(tool_output, tool_name) # tool_output is a dict
-
-                            if tool_output['output'] == "" and not tool_output['success']:
-                                error_msg = (
-                                    f"Shell command execution failed.\n"
-                                    f"Error: {tool_output.get('error', 'Unknown error')}"
-                                )
-                                print(f"There was an error in the shell command execution: {tool_output.get('error', 'Unknown error')}")
-                                self.message.append({"role": "user", "content": error_msg})
-                            elif tool_output['output'] == "":
-                                # For shell commands, empty output on success is common (e.g., mkdir, rm)
-                                if tool_output['success']:
-                                    self.message.append({"role": "user", "content": "Shell command executed successfully with no output."})
-                                else: # Should ideally have an error message here
-                                    self.message.append({"role": "user", "content": f"Shell command executed with no output, but an error occurred: {tool_output.get('error', 'Unknown error')}"})
-
-                            else: # There is output
-                                if tool_output['output'].strip():
-                                    print(f"Command Output:\n{tool_output['output']}")
-                                if tool_output['success']:
-                                    self.message.append({"role": "user", "content": f"Command Output:\n{tool_output['output']}"})
-                                else:
-                                    self.message.append({"role": "user", "content": f"Command Output:\n{tool_output['output']}\nError: {tool_output.get('error', 'Unknown error')}"})
-                        else:
-                            self.message.append({"role": "user", "content": "User chose not to execute the shell command."})
-                            print("Shell command execution skipped by the user.")
-
-                else: # Other tools
-                    print(f"\nCalling tool: {tool_name}")
-                    try:
-                        tool_output_result = tool_manager.call_tool(tool_name, tool_input)
-                        self.terminal.tool_output_log(tool_output_result, tool_name)
-                        self.message.append({"role": "user", "content": f"Tool Output: {tool_output_result}"})
-                    except ValueError as e:
-                        error_msg = str(e)
-                        print(f"Tool Error: {error_msg}")
-                        self.message.append({"role": "user", "content": f"Tool Error: {error_msg}"})
+                # Call the tool and append the result (no confirmation or special logic)
+                try:
+                    tool_output_result = tool_manager.call_tool(tool_name, tool_input)
+                    self.terminal.tool_output_log(tool_output_result, tool_name)
+                    print(tool_output_result)
+                    self.message.append({"role": "user", "content": tool_output_result})
+                except ValueError as e:
+                    error_msg = str(e)
+                    print(f"Tool Error: {error_msg}")
+                    self.message.append({"role": "user", "content": f"Tool Error: {error_msg}"})
 
             else: # Not a tool call, could be a direct response or requires clarification
                 # This part handles responses that are not formatted as tool calls.
