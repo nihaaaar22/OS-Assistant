@@ -15,7 +15,7 @@ from mistralai.models.sdkerror import SDKError # This might be an issue if LiteL
                                               # We'll keep it for now and see if errors arise during testing.
 # from Env import python_executor # Will be replaced by BaseEnv
 # from Env.shell import ShellExecutor # Will be replaced by BaseEnv
-from Src.Env.base_env import create_environment, BaseEnv # Added
+from Env.base_env import create_environment, BaseEnv # Added
 from Env import python_executor # Keep for type hint in the old execute method if needed, or remove if execute is fully removed
 from llm_interface.llm import LiteLLMInterface # Import LiteLLMInterface
 

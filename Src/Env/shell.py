@@ -1,7 +1,7 @@
 import subprocess
 import time
 import sys
-from Src.Env.base_env import BaseEnv
+from .base_env import BaseEnv
 import re
 
 class ShellExecutor(BaseEnv):
@@ -78,15 +78,26 @@ class ShellExecutor(BaseEnv):
                         'output': 'Blocked potentially harmful command.',
                         'error': f'Command matches forbidden pattern: {pattern}'
                     }
-            # Check for sensitive directory access
+            # Improved check for sensitive directory access
             for sensitive_dir in sensitive_dirs:
-                # Only block if the command is trying to directly access or operate on the sensitive dir
-                if re.search(rf'\b{sensitive_dir}\b', code_or_command, re.IGNORECASE):
-                    return {
-                        'success': False,
-                        'output': f'Blocked access to sensitive directory: {sensitive_dir}',
-                        'error': f'Attempted access to sensitive directory: {sensitive_dir}'
-                    }
+                # Only block if the command is trying to directly operate on the sensitive dir itself (not subpaths)
+                # For '/', block only if the command is exactly '/' or has a space and then '/'
+                if sensitive_dir == '/':
+                    if re.search(r'(\s|^)/($|\s)', code_or_command):
+                        return {
+                            'success': False,
+                            'output': f'Blocked access to sensitive directory: {sensitive_dir}',
+                            'error': f'Attempted access to sensitive directory: {sensitive_dir}'
+                        }
+                else:
+                    # Block if the command is operating on the directory itself, not a subpath (e.g., 'ls /root' but not 'ls /root/somefile')
+                    pattern = rf'(\s|^)({re.escape(sensitive_dir)})(\s|$)'
+                    if re.search(pattern, code_or_command, re.IGNORECASE):
+                        return {
+                            'success': False,
+                            'output': f'Blocked access to sensitive directory: {sensitive_dir}',
+                            'error': f'Attempted access to sensitive directory: {sensitive_dir}'
+                        }
             
             # Execute the command in a subprocess
             self.process = subprocess.Popen(

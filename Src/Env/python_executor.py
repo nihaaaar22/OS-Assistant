@@ -21,7 +21,7 @@ import os
 from typing import Dict
 import textwrap
 import sys
-from Src.Env.base_env import BaseEnv
+from .base_env import BaseEnv
 import time
 
 class PythonExecutor(BaseEnv):
