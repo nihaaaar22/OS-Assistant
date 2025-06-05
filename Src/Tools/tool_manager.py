@@ -7,25 +7,63 @@ from Tools.web_search import web_search
 from Tools.file_task import file_reader, file_maker, file_writer, directory_maker
 from Tools.system_details import get_os_details, get_datetime, get_memory_usage, get_cpu_info
 from Tools.userinp import get_user_input
+from Src.Env.python_executor import PythonExecutor
+from Src.Env.shell import ShellExecutor
 
 #need to transform it into map of dictionary
 #name : [function : xyz,description : blah bah]
 
-tools_function_map = {
-    "web_loader": load_data,
-    "web_search": web_search,
-    "file_maker": file_maker,
-    "file_reader":file_reader,
-    "directory_maker":directory_maker,
-    "file_writer":file_writer,
-    "get_os_details": get_os_details,
-    "get_datetime": get_datetime,
-    "get_memory_usage": get_memory_usage,
-    "get_cpu_info": get_cpu_info,
-    "get_user_input": get_user_input
-}
 
 
+
+def execute_python_code_tool(code: str) -> str:
+    """ 
+    Prompts for confirmation, then executes the given Python code and returns a formatted result string.
+    """
+    user_confirmation = input(f"Do you want to execute this Python code snippet?\n```python\n{code}\n```\n(y/n): ")
+    if user_confirmation.lower() != 'y':
+        print("Python code execution skipped by the user.")
+        return "User chose not to execute the Python code."
+    executor = PythonExecutor()
+    result = executor.execute(code)
+    if result['output'] == "" and not result['success']:
+        error_msg = (
+            f"Python execution failed.\n"
+            f"Error: {result.get('error', 'Unknown error')}"
+        )
+        return error_msg
+    elif result['output'] == "":
+        no_output_msg = (
+            "Python execution completed but no output was produced. "
+            "Ensure your code includes print() statements to show results."
+        )
+        return no_output_msg
+    else:
+        if result['success']:
+            return f"Program Output:\n{result['output']}"
+        else:
+            return f"Program Output:\n{result['output']}\nError: {result.get('error', 'Unknown error')}"
+
+def execute_shell_command_tool(command: str) -> str:
+    """
+    Prompts for confirmation, then executes the given shell command and returns a formatted result string.
+    """
+    user_confirmation = input(f"Do you want to execute the shell command: '{command}'? (y/n): ")
+    if user_confirmation.lower() != 'y':
+        print("Shell command execution skipped by the user.")
+        return "User chose not to execute the shell command."
+    executor = ShellExecutor()
+    result = executor.execute(command)
+    if result['output'] == "":
+        if result['success']:
+            return "Shell command executed successfully with no output."
+        else:
+            return f"Shell command executed with no output, but an error occurred: {result.get('error', 'Unknown error')}"
+    else:
+        if result['success']:
+            return f"Command Output:\n{result['output']}"
+        else:
+            return f"Command Output:\n{result['output']}\nError: {result.get('error', 'Unknown error')}"
 
 def call_tool(tool_name, tool_input):
     """
@@ -41,6 +79,21 @@ def call_tool(tool_name, tool_input):
     else:
         raise ValueError(f"Tool '{tool_name}' not found. Check the tools available in the tool directory")
 
+tools_function_map = {
+    "web_loader": load_data,
+    "web_search": web_search,
+    "file_maker": file_maker,
+    "file_reader":file_reader,
+    "directory_maker":directory_maker,
+    "file_writer":file_writer,
+    "get_os_details": get_os_details,
+    "get_datetime": get_datetime,
+    "get_memory_usage": get_memory_usage,
+    "get_cpu_info": get_cpu_info,
+    "get_user_input": get_user_input,
+    "execute_python_code": execute_python_code_tool,
+    "execute_shell_command": execute_shell_command_tool,
+}
 
 # print(call_tool("web_loader","https://www.toastmasters.org"))
 # print(call_tool("web_search","manus ai"))

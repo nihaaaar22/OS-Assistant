@@ -70,5 +70,21 @@
             "prompt": "The message to display to the user",
             "input_type": "Type of input to validate (text, number, boolean, optional, defaults to text)"
         }
+    },
+    {
+        "name": "execute_python_code",
+        "summary": "Executes a given snippet of Python code. The code should be self-contained. Input should be a JSON object with a 'code' key containing the Python code string.",
+        "arguments": {
+            "code": "The Python code to execute."
+        },
+        "input_schema": {"type": "object", "properties": {"code": {"type": "string"}}, "required": ["code"]}
+    },
+    {
+        "name": "execute_shell_command",
+        "summary": "Executes a given shell command. Input should be a JSON object with a 'command' key containing the shell command string.",
+        "arguments": {
+            "command": "The shell command to execute."
+        },
+        "input_schema": {"type": "object", "properties": {"command": {"type": "string"}}, "required": ["command"]}
     }
 ]
