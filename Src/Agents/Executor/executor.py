@@ -134,7 +134,6 @@ class executor:
                 try:
                     tool_output_result = tool_manager.call_tool(tool_name, tool_input)
                     self.terminal.tool_output_log(tool_output_result, tool_name)
-                    print(tool_output_result)
                     self.message.append({"role": "user", "content": tool_output_result})
                 except ValueError as e:
                     error_msg = str(e)
