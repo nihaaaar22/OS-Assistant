@@ -22,7 +22,7 @@ from llm_interface.llm import LiteLLMInterface # Import LiteLLMInterface
 from Tools import tool_manager
 
 class RateLimiter:
-    def __init__(self, wait_time: float = 5.0, max_retries: int = 3):
+    def __init__(self, wait_time: float = 1.0, max_retries: int = 3):
         self.wait_time = wait_time
         self.max_retries = max_retries
         self.last_call_time = None

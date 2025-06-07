@@ -51,72 +51,32 @@ class TerminalInterface:
 
     def process_markdown_chunk(self, chunk):
         """
-        Process a chunk of markdown text, handling code blocks, shell commands, tool calls, and regular markdown.
+        Process a chunk of markdown text, handling tool calls and regular markdown.
         Args:
         chunk (str): A piece of markdown text to process
         """
-        # Initialize tracking attributes if they don't exist yet
-        
-        
         self.buffer += chunk
         while "\n" in self.buffer:
             line, self.buffer = self.buffer.split("\n", 1)
             line_stripped = line.strip()
-            
-            # Handle code blocks
-            if line_stripped.startswith("<<CODE>>"):
-                if self.inside_code_block:
-                    # Closing code block
-                    self.console.print(Syntax(self.code_buffer, "python", theme="bw", line_numbers=False))
-                    self.inside_code_block = False
-                    self.code_buffer = ""
-                else:
-                    # Opening code block
-                    self.inside_code_block = True
-                    self.code_lang = line_stripped[8:].strip() or "python"  # default lang
-            
-            # Handle shell command blocks
-            elif line_stripped.startswith("<<SHELL_COMMAND>>"):
-                self.inside_shell_command = True
-                self.shell_command_buffer = ""
-                # Print a styled header for shell commands
-                self.console.print("[bold yellow]Shell Command:[/bold yellow]")
-            
-            elif line_stripped.startswith("<<END_SHELL_COMMAND>>"):
-                if self.inside_shell_command:
-                    # Closing shell command block
-                    self.console.print(Syntax(self.shell_command_buffer.strip(), "bash", theme="monokai", line_numbers=False))
-                    self.inside_shell_command = False
-                    self.shell_command_buffer = ""
-            
+
             # Handle tool call opening delimiter - be more flexible with whitespace
-            elif "<<TOOL_CALL>>" in line_stripped:
+            if "<<TOOL_CALL>>" in line_stripped:
                 self.inside_tool_call = True
                 self.tool_call_buffer = ""
-                # Print a styled header for tool calls
                 self.console.print("[bold cyan]Tool Call:[/bold cyan]")
-            
+
             # Handle tool call closing delimiter - be more flexible with whitespace
             elif "<<END_TOOL_CALL>>" in line_stripped:
                 self.console.print(Syntax('{"status": "end_tool_call"}', "json", theme="monokai", line_numbers=False))
                 self.console.print("[bold cyan]--------------------------------[/bold cyan]")
                 self.inside_tool_call = False
                 self.tool_call_buffer = ""
-            
-            # Handle content inside code blocks
-            elif self.inside_code_block:
-                self.code_buffer += line + "\n"
-            
-            # Handle content inside shell command blocks
-            elif self.inside_shell_command:
-                self.shell_command_buffer += line + "\n"
-            
+
             # Handle content inside tool calls
             elif self.inside_tool_call:
                 self.tool_call_buffer += line + "\n"
-                # Print the line with styling as it comes in
 
-            
             # Regular markdown content
             else:
                 self.console.print(Markdown(line))
@@ -125,14 +85,7 @@ class TerminalInterface:
         """
         Flush any remaining markdown content in the buffer.
         """
-        if self.inside_code_block:
-            self.console.print(Syntax(self.code_buffer, "python", theme="bw", line_numbers=False))
-            self.inside_code_block = False
-        elif self.inside_shell_command:
-            self.console.print(Syntax(self.shell_command_buffer.strip(), "bash", theme="monokai", line_numbers=False))
-            
-            self.inside_shell_command = False
-        elif hasattr(self, 'inside_tool_call') and self.inside_tool_call:
+        if hasattr(self, 'inside_tool_call') and self.inside_tool_call:
             # Handle case where tool call is not properly terminated
             self.console.print(Syntax(self.tool_call_buffer.strip(), "json", theme="monokai", line_numbers=False))
             self.console.print("[bold cyan]End Tool Call (forced)[/bold cyan]")
@@ -142,10 +95,7 @@ class TerminalInterface:
                 self.console.print("━" * 80)  # Print a solid line
             else:
                 self.console.print(Markdown(self.buffer))
-        
         self.buffer = ""
-        self.code_buffer = ""
-        self.shell_command_buffer = ""
         if hasattr(self, 'tool_call_buffer'):
             self.tool_call_buffer = ""
 
