@@ -128,12 +128,13 @@ class executor:
             if tool_call:
                 tool_name = tool_call['tool_name']
                 tool_input = tool_call['input']
-                print(f"\nIdentified tool call: {tool_name} with input {tool_input}")
+                
 
                 # Call the tool and append the result (no confirmation or special logic)
                 try:
                     tool_output_result = tool_manager.call_tool(tool_name, tool_input)
-                    self.terminal.tool_output_log(tool_output_result, tool_name)
+                    if tool_name not in ['execute_python_code', 'execute_shell_command']:
+                        self.terminal.tool_output_log(tool_output_result, tool_name)
                     self.message.append({"role": "user", "content": tool_output_result})
                 except ValueError as e:
                     error_msg = str(e)

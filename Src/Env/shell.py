@@ -114,21 +114,16 @@ class ShellExecutor(BaseEnv):
             stderr_data = []
             start_time = time.time()
             
-            # First read all stdout
-            for line in self.process.stdout:
-                # Check for timeout
-                if time.time() - start_time > 30:
-                    self.process.kill()
-                    return {
-                        'success': False,
-                        'output': 'Execution timed out after 30 seconds',
-                        'error': 'Timeout error'
-                    }
-                
-                stdout_data.append(line)
-                print(line, end='', flush=True)  # Print in real-time
+            # First read all stdout character by character
+            while True:
+                char = self.process.stdout.read(1)
+                if char == '' and self.process.poll() is not None:
+                    break  # Process ended and no more output
+                if char:
+                    stdout_data.append(char)
+                    print(char, end='', flush=True)  # Print in real-time, no extra newline
             
-            # Then read all stderr
+            # Then read all stderr (can keep line-by-line or do char-by-char similarly)
             for line in self.process.stderr:
                 # Check for timeout
                 if time.time() - start_time > 30:
