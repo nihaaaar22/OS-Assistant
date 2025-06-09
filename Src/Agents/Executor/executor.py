@@ -7,7 +7,7 @@ import time
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
 from Utils.ter_interface import TerminalInterface
 from Utils.executor_utils import parse_tool_call
-from Agents.Executor.prompts import get_system_prompt, get_task_prompt # Import prompts
+from Agents.Executor.prompts import get_executor_prompt # Import prompts
 
 from typing import Optional
 from mistralai.models.sdkerror import SDKError # This might be an issue if LiteLLM doesn't use SDKError
@@ -44,7 +44,7 @@ class executor:
         # self.shell_executor = ShellExecutor() # Initialize ShellExecutor
         self.message = [
             {"role": "system", "content": self.system_prompt},
-            {"role": "user", "content": self.task_prompt}
+            {"role": "user", "content": self.user_prompt}
         ]
         self.terminal = TerminalInterface()
         self.initialize_llm()
@@ -71,8 +71,7 @@ class executor:
             config = json.load(config_file)
             working_dir = config.get("working_directory", "")
 
-        self.system_prompt = get_system_prompt(self.user_prompt, working_dir, tools_details)
-        self.task_prompt = get_task_prompt()
+        self.system_prompt = get_executor_prompt(working_dir, tools_details)
 
     def run_inference(self):
         retries = 0
@@ -84,7 +83,8 @@ class executor:
 
                 # Streaming is handled within LiteLLMInterface.chat()
                 # and TerminalInterface.process_markdown_chunk()
-                self.message.append({"role": "assistant", "content": response})
+                if response.strip():
+                    self.message.append({"role": "assistant", "content": response})
                 return response
 
             except Exception as e: # Catching generic Exception as LiteLLM maps to OpenAI exceptions
@@ -112,11 +112,6 @@ class executor:
         self.run_task()
 
     def run_task(self):
-        # Remove tools_details parameter since it's in the prompt
-        task_message = self.task_prompt
-
-        self.message.append({"role": "user", "content": task_message})
-
         iteration = 0
         task_done = False
 
@@ -142,10 +137,6 @@ class executor:
                     self.message.append({"role": "user", "content": f"Tool Error: {error_msg}"})
 
             else: # Not a tool call, could be a direct response or requires clarification
-                # This part handles responses that are not formatted as tool calls.
-                # It might be a final answer, a question, or just conversational text.
-                # The existing logic for TASK_DONE or asking for next step handles this.
-                # No specific code/shell parsing here anymore as they are tools.
                 pass # Explicitly pass if no tool call and no old code/shell logic.
 
             # Check if task is done
