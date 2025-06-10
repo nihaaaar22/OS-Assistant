@@ -206,12 +206,12 @@ Examples:
         
         try:
             # Get initial prompt
-            user_input = self.session.prompt(HTML("<b>Please enter your prompt: </b>"))
+            user_input = self.session.prompt(HTML("<b>Piko></b>"))
             
             # Handle special commands
             if user_input.lower() == 'help':
                 self.display_help()
-                user_input = self.session.prompt(HTML("<b>Please enter your prompt: </b>"))
+                user_input = self.session.prompt(HTML("<b>Piko></b>"))
             elif user_input.lower() == 'quit':
                 print("Goodbye!")
                 return
@@ -227,7 +227,7 @@ Examples:
             # Continue conversation loop
             while True:
                 try:
-                    user_input = self.session.prompt(HTML("<b>\nPlease enter your prompt (or 'quit' to exit): </b>"))
+                    user_input = self.session.prompt(HTML("<b>\nPiko></b>"))
                     
                     # Handle special commands
                     if user_input.lower() == 'quit':
