@@ -130,7 +130,7 @@ class executor:
                     tool_output_result = tool_manager.call_tool(tool_name, tool_input)
                     if tool_name not in ['execute_python_code', 'execute_shell_command']:
                         self.terminal.tool_output_log(tool_output_result, tool_name)
-                    self.message.append({"role": "user", "content": tool_output_result})
+                    self.message.append({"role": "user", "content": "Tool Output: " + str(tool_output_result)})
                 except ValueError as e:
                     error_msg = str(e)
                     print(f"Tool Error: {error_msg}")
