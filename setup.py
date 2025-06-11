@@ -3,7 +3,7 @@ from pathlib import Path
 
 setup(
     name="PikoAi",
-    version="0.1.15",
+    version="0.1.16",
     packages=find_packages(where="Src"),
     py_modules=["cli", "OpenCopilot"],
     package_dir={"": "Src"},

@@ -123,7 +123,6 @@ def load_data(**kwargs):
     headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_4) AppleWebKit/537.36 (KHTML like Gecko) Chrome/52.0.2743.116 Safari/537.36"
     }
-    web_data = {}
     content = ""
     try:
         response = session.get(url, headers=headers, timeout=30)
@@ -139,28 +138,11 @@ def load_data(**kwargs):
                 # Extract text from each page and combine it
                 content = "\n".join([page.extract_text() for page in pdf.pages if page.extract_text()])
 
-        meta_data = {"url": url}
-        doc_id = hashlib.sha256((content + url).encode()).hexdigest()
-        web_data = {
-            "doc_id": doc_id,
-            "data": [
-                {
-                    "content": content,
-                    "meta_data": meta_data,
-                }
-            ],
-        }
     except Exception as e:
         logging.error(f"Error loading data from {url}: {e}")
-        web_data = {
-            "data": [
-                {
-                    "content": "",
-                    "meta_data": "",
-                }
-            ],
-        }
-    return web_data
+        content = ""
+    
+    return content
 
 
 def close_session(session):

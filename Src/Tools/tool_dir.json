@@ -68,7 +68,7 @@
         "summary": "Prompts the user for input and returns their response",
         "arguments": {
             "prompt": "The message to display to the user",
-            "input_type": "Type of input to validate (text, number, boolean, optional, defaults to text)"
+            "input_type": "Type of input to validate (text, number, optional, defaults to text)"
         }
     },
     {
