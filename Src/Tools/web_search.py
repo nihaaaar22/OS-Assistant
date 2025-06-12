@@ -1,6 +1,9 @@
 import os
+from dotenv import load_dotenv
 from duckduckgo_search import DDGS
 import requests
+
+load_dotenv()
 
 def web_search(max_results: int = 10, **kwargs) -> str:
     """
@@ -26,7 +29,7 @@ def web_search(max_results: int = 10, **kwargs) -> str:
         results = ddgs.text(query, max_results=max_results)
         if results and len(results) > 0:
             postprocessed_results = [f"[{result['title']}]({result['href']})\n{result['body']}" for result in results]
-            raise Exception("DuckDuckGo search failed and SERP_API_KEY is not set for SerpAPI fallback.")            
+            raise Exception("DuckDuckGo search failed ")            
             return "## Search Results (DuckDuckGo)\n\n" + "\n\n".join(postprocessed_results)
     except Exception:
         pass  # Will try SerpAPI fallback
