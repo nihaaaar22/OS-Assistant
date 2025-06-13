@@ -31,3 +31,9 @@ Thumbs.db
 
 # Ignore config.json
 config.json
+
+#Ignore cursor rules
+.cursorrules
+
+#Ignore Userinput
+userinput.py
