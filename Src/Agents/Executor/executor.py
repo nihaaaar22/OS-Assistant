@@ -9,16 +9,7 @@ from Utils.ter_interface import TerminalInterface
 from Utils.executor_utils import parse_tool_call
 from Agents.Executor.prompts import get_executor_prompt # Import prompts
 
-from typing import Optional
-from mistralai.models.sdkerror import SDKError # This might be an issue if LiteLLM doesn't use SDKError
-                                              # LiteLLM maps exceptions to OpenAI exceptions.
-                                              # We'll keep it for now and see if errors arise during testing.
-# from Env import python_executor # Will be replaced by BaseEnv
-# from Env.shell import ShellExecutor # Will be replaced by BaseEnv
-from Env.base_env import create_environment, BaseEnv # Added
-from Env import python_executor # Keep for type hint in the old execute method if needed, or remove if execute is fully removed
 from llm_interface.llm import LiteLLMInterface # Import LiteLLMInterface
-
 from Tools import tool_manager
 
 class RateLimiter:
@@ -92,12 +83,6 @@ class executor:
                 if "429" in str(e) and retries < self.rate_limiter.max_retries:
                     retries += 1
                     print(f"\nRate limit error detected. Waiting {self.rate_limiter.wait_time} seconds before retry {retries}/{self.rate_limiter.max_retries}")
-                    time.sleep(self.rate_limiter.wait_time)
-                # Check if the error is an SDKError (though less likely with LiteLLM directly)
-                # or if it's any other exception that we should retry or raise.
-                elif isinstance(e, SDKError) and "429" in str(e) and retries < self.rate_limiter.max_retries: # Added SDKError check just in case
-                    retries += 1
-                    print(f"\nRate limit exceeded (SDKError). Waiting {self.rate_limiter.wait_time} seconds before retry {retries}/{self.rate_limiter.max_retries}")
                     time.sleep(self.rate_limiter.wait_time)
                 else:
                     print(f"\nError occurred during inference: {str(e)}")
