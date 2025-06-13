@@ -72,6 +72,7 @@ def load_config(config_path: str) -> dict:
         with open(config_path, 'r') as f:
             try:
                 config = json.load(f)
+                config["working_directory"] = os.getcwd()
             except json.JSONDecodeError:
                 print("Error reading config.json. File might be corrupted. Re-creating default.")
                 config = { "working_directory": os.getcwd(), "llm_provider": None, "model_name": None }
@@ -156,6 +157,8 @@ def cli(ctx, task, max_iter, change_model):
     """TaskAutomator – Your AI Task Automation Tool"""
     config_path = os.path.join(os.path.dirname(__file__), '../config.json')
     config = load_config(config_path)
+    save_config(config_path, config)
+    
     clear_terminal()
 
     if change_model or not config.get("model_name"):
