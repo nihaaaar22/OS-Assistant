@@ -28,8 +28,7 @@ def web_search(max_results: int = 10, **kwargs) -> str:
         ddgs = DDGS()
         results = ddgs.text(query, max_results=max_results)
         if results and len(results) > 0:
-            postprocessed_results = [f"[{result['title']}]({result['href']})\n{result['body']}" for result in results]
-            raise Exception("DuckDuckGo search failed ")            
+            postprocessed_results = [f"[{result['title']}]({result['href']})\n{result['body']}" for result in results]          
             return "## Search Results (DuckDuckGo)\n\n" + "\n\n".join(postprocessed_results)
     except Exception:
         pass  # Will try SerpAPI fallback
