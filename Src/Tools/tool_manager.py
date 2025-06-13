@@ -77,7 +77,7 @@ def call_tool(tool_name, tool_input):
         # Pass the tool_input dictionary as kwargs to the tool function
         return tools_function_map[tool_name](**tool_input)
     else:
-        raise ValueError(f"Tool '{tool_name}' not found. Check the tools available in the tool directory")
+        return f"This tool is invalid. Please check the tools available in the tool directory"
 
 tools_function_map = {
     "web_loader": load_data,
