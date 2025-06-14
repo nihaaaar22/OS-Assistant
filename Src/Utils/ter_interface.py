@@ -68,7 +68,8 @@ class TerminalInterface:
 
             # Handle tool call closing delimiter - be more flexible with whitespace
             elif "<<END_TOOL_CALL>>" in line_stripped:
-                self.console.print(Syntax('{"status": "end_tool_call"}', "json", theme="monokai", line_numbers=False))
+                self.console.print(self.tool_call_buffer)
+                # self.console.print(Syntax('{"status": "end_tool_call"}', "json", theme="monokai", line_numbers=False))
                 self.console.print("[bold cyan]--------------------------------[/bold cyan]")
                 self.inside_tool_call = False
                 self.tool_call_buffer = ""
