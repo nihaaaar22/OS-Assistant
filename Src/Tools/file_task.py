@@ -19,7 +19,8 @@ def file_reader(**kwargs) -> dict:
             return {"success": False, "output": "Error: 'file_path' is required."}
         
         file_path = kwargs["file_path"]
-        
+        if not os.path.isabs(file_path):
+            file_path = os.path.abspath(file_path)
         # Enhanced Security Checks (Primary Change Area)
         abs_file_path = os.path.abspath(file_path)
         normalized_abs_path = abs_file_path.lower()
@@ -147,6 +148,8 @@ def file_maker(**kwargs) -> dict:
             return {"success": False, "output": "Error: 'file_path' is required."}
         
         file_path = kwargs["file_path"]
+        if not os.path.isabs(file_path):
+            file_path = os.path.abspath(file_path)
         
         # Security check: Prevent creation in sensitive directories
         forbidden_dirs = ["/etc", "/root", "/sys", "/proc"]
@@ -184,6 +187,8 @@ def file_writer(**kwargs) -> dict:
             return {"success": False, "output": "Error: 'file_path' and 'content' are required."}
         
         file_path = kwargs["file_path"]
+        if not os.path.isabs(file_path):
+            file_path = os.path.abspath(file_path)
         content = kwargs["content"]
         append_mode = kwargs.get("append", False)
         
@@ -220,7 +225,10 @@ def directory_maker(**kwargs) -> dict:
         if "dir_path" not in kwargs:
             return {"success": False, "output": "Error: 'dir_path' is required."}
         
+        # Convert to absolute path if not already absolute
         dir_path = kwargs["dir_path"]
+        if not os.path.isabs(dir_path):
+            dir_path = os.path.abspath(dir_path)
         
         # Security check: Prevent creation in sensitive directories
         forbidden_dirs = ["/etc", "/root", "/sys", "/proc"]
