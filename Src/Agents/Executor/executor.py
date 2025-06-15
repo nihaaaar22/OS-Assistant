@@ -9,7 +9,7 @@ from Utils.ter_interface import TerminalInterface
 from Utils.executor_utils import parse_tool_call
 from Agents.Executor.prompts import get_executor_prompt # Import prompts
 
-from llm_interface.llm import LiteLLMInterface # Import LiteLLMInterface
+from llm_interface.llm import LiteLLMInterface # Import LiteLLMInterfacea
 from Tools import tool_manager
 
 class RateLimiter:
@@ -26,10 +26,10 @@ class RateLimiter:
         self.last_call_time = time.time()
 
 class executor:
-    def __init__(self, user_prompt, max_iter=10):
+    def __init__(self, user_prompt, max_iter=30):
         self.user_prompt = user_prompt
         self.max_iter = max_iter
-        self.rate_limiter = RateLimiter(wait_time=5.0, max_retries=3)
+        self.rate_limiter = RateLimiter(wait_time=3.0, max_retries=3)
         self.executor_prompt_init()  # Update system_prompt
         # self.python_executor = python_executor.PythonExecutor()  # Initialize PythonExecutor
         # self.shell_executor = ShellExecutor() # Initialize ShellExecutor
@@ -80,7 +80,7 @@ class executor:
 
             except Exception as e: # Catching generic Exception as LiteLLM maps to OpenAI exceptions
                 # Check if the error message contains "429" for rate limiting
-                if "429" in str(e) and retries < self.rate_limiter.max_retries:
+                if retries < self.rate_limiter.max_retries:
                     retries += 1
                     print(f"\nRate limit error detected. Waiting {self.rate_limiter.wait_time} seconds before retry {retries}/{self.rate_limiter.max_retries}")
                     time.sleep(self.rate_limiter.wait_time)
@@ -130,7 +130,7 @@ class executor:
                 task_done = True
 
             else:
-                self.message.append({"role": "user", "content": "If the task i mentioned is complete then output TASK_DONE .If not then run another iteration."})
+                self.message.append({"role": "user", "content": "Continue with the task if not complete.Else simply output TASK_DONE. "})
                 iteration += 1
 
         if not task_done:
