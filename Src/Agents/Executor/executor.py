@@ -21,8 +21,8 @@ class RateLimiter:
     def wait_if_needed(self):
         if self.last_call_time is not None:
             elapsed = time.time() - self.last_call_time
-            if elapsed < 1.0:
-                time.sleep(1.0 - elapsed)
+            if elapsed < self.wait_time:
+                time.sleep(self.wait_time - elapsed)
         self.last_call_time = time.time()
 
 class executor:
@@ -46,8 +46,10 @@ class executor:
         self.llm = LiteLLMInterface()
 
     def get_tool_dir(self):
-        import pkg_resources
-        tool_dir_path = pkg_resources.resource_filename('Tools', 'tool_dir.json')
+        # Use direct path resolution instead of pkg_resources
+        # pkg_resources is used for finding resources within installed packages,
+        # but since we're working with a local project structure, we can use direct paths
+        tool_dir_path = os.path.join(os.path.dirname(__file__), '../../Tools/tool_dir.json')
         with open(tool_dir_path, "r") as file:
             return file.read()
 
