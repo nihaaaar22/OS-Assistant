@@ -35,6 +35,15 @@ class executor:
         # self.shell_executor = ShellExecutor() # Initialize ShellExecutor
         self.message = [
             {"role": "system", "content": self.system_prompt},
+            {"role":"user","content":"Hi"},
+            {"role":"assistant","content":"""<<tool_call>>
+            {
+                "tool_name": "user_input",
+                "input": {
+                    "query": "Hi,im your terminal assistant. How can I help you?"
+                }
+            }
+            <<END_TOOL_CALL>>"""},
             {"role": "user", "content": self.user_prompt}
         ]
         self.terminal = TerminalInterface()
