@@ -64,9 +64,9 @@ class LiteLLMInterface:
         except Exception as e:
             # litellm maps exceptions to OpenAI exceptions.
             # The executor should catch these and handle them.
-            print(f"An error occurred during the API call: {e}")
+            
             self.terminal.flush_markdown() # Ensure terminal is flushed even on error
-            raise # Re-raise the exception to be caught by the executor
+            raise 
 
 
 # class MistralModel:
