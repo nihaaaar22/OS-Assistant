@@ -257,7 +257,11 @@ Examples:
             print("\nGoodbye!")
         except Exception as e:
             print_formatted_text(FormattedText([
-                ('class:error', f"Failed to start OpenCopilot: {e}")
+                ('class:error', f"Failed to start OpenCopilot: {e.__class__.__name__}: {e}")
+            ]))
+            import traceback
+            print_formatted_text(FormattedText([
+                ('class:error', f"Error occurred at: {traceback.format_exc()}")
             ]))
 
     def run_task(self, user_prompt, max_iter=10):
