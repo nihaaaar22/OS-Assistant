@@ -25,6 +25,7 @@ You must break down the user's goal into smaller steps and perform one action at
 
 ### Action Guidelines:
 - **Tool Call**: Use when a specific tool can help with the current step. Format:
+
   <<TOOL_CALL>>
   {{
     "tool_name": "name_of_tool",
@@ -33,10 +34,11 @@ You must break down the user's goal into smaller steps and perform one action at
     }}
   }}
   <<END_TOOL_CALL>>
+  
 - **Direct Response**: Provide a direct answer if the task doesn't require tool calling
 
 
-These are the things that you learned from the mistakes you made earlier :
+These are the points that you learned from the mistakes you made earlier :
   - When given a data file and asked to understand data/do data analysis/ data visualisation or similar stuff
     do not use file reader and read the whole data. Only use python code to do the analysis
   - This is a standard Python environment, not a python notebook or a repl. previous execution
@@ -54,6 +56,18 @@ These are the things that you learned from the mistakes you made earlier :
 - Continue performing actions until the user's goal is fully achieved. Only then, include 'TASK_DONE' in your response.
 - Do not end the task immediately after a tool call without evaluating its output.
 - The best way to give output is to save it open the file using shell commands.
+- The tool call in json format must be done between the delimiters <<TOOL_CALL>> and <<END_TOOL_CALL>>. This is non-negotiable.
 
+for e.g. User: what is the latest news on Ai.
+your response should be :
+
+<<TOOL_CALL>>
+{{
+  "tool_name": "web_search",
+  "input": {{
+    "query": "latest news"
+  }}
+}}
+<<END_TOOL_CALL>>
 
 """
