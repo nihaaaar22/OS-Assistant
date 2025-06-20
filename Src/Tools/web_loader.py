@@ -125,7 +125,7 @@ def load_data(**kwargs):
     }
     content = ""
     try:
-        response = session.get(url, headers=headers, timeout=30)
+        response = session.get(url, headers=headers, timeout=3)
         response.raise_for_status()
         data = response.content
         # Check content type
@@ -138,6 +138,12 @@ def load_data(**kwargs):
                 # Extract text from each page and combine it
                 content = "\n".join([page.extract_text() for page in pdf.pages if page.extract_text()])
 
+    except requests.exceptions.Timeout:
+        logging.error(f"Timeout error loading data from {url}: The webpage didn't load in time")
+        content = f"Error: The webpage at {url} didn't load in time. Please try again later or check other urls for the task. use web_search tool to find other urls."
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Request error loading data from {url}: {e}")
+        content = f"Error: Failed to load webpage at {url}. {str(e)}"
     except Exception as e:
         logging.error(f"Error loading data from {url}: {e}")
         content = ""
