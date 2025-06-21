@@ -36,12 +36,7 @@ class TerminalInterface:
         elif not isinstance(message, str):
             message = str(message)
 
-        # Original code:
-        # panel = Panel(
-        #     Text(message, style="orange"),
-        #     title=f"[bold green]{tool_name} Output[/bold green]",
-        #     border_style="green"
-        # )
+      
         panel = Panel(
             Text(message, style="blue"),
             title=f"[bold green]{tool_name} Output[/bold green]",
@@ -61,13 +56,13 @@ class TerminalInterface:
             line_stripped = line.strip()
 
             # Handle tool call opening delimiter - be more flexible with whitespace
-            if "<<TOOL_CALL>>" in line_stripped:
+            if "```json" in line_stripped:
                 self.inside_tool_call = True
                 self.tool_call_buffer = ""
                 self.console.print("[bold cyan]Tool Call:[/bold cyan]")
 
             # Handle tool call closing delimiter - be more flexible with whitespace
-            elif "<<END_TOOL_CALL>>" in line_stripped:
+            elif "```" in line_stripped and self.inside_tool_call:
                 self.console.print(self.tool_call_buffer)
                 # self.console.print(Syntax('{"status": "end_tool_call"}', "json", theme="monokai", line_numbers=False))
                 self.console.print("[bold cyan]--------------------------------[/bold cyan]")
@@ -89,7 +84,7 @@ class TerminalInterface:
         if hasattr(self, 'inside_tool_call') and self.inside_tool_call:
             # Handle case where tool call is not properly terminated
             self.console.print(Syntax(self.tool_call_buffer.strip(), "json", theme="monokai", line_numbers=False))
-            self.console.print("[bold cyan]End Tool Call (forced)[/bold cyan]")
+            # self.console.print("[bold cyan]End Tool Call (forced)[/bold cyan]")
             self.inside_tool_call = False
         elif self.buffer:
             if "TASK_DONE" in self.buffer:

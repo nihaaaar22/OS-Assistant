@@ -4,6 +4,8 @@
 import os
 import sys
 import time
+import logging
+import json
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
 from Utils.ter_interface import TerminalInterface
 from Utils.executor_utils import parse_tool_call
@@ -30,20 +32,28 @@ class executor:
         self.user_prompt = user_prompt
         self.max_iter = max_iter
         self.rate_limiter = RateLimiter(wait_time=3.0, max_retries=3)
+        
+        # Load environment configuration
+        self.environment = self.load_environment_config()
+        
+        # Setup logging if in development environment
+        if self.environment == "development":
+            self.setup_logging()
+        
         self.executor_prompt_init()  # Update system_prompt
         # self.python_executor = python_executor.PythonExecutor()  # Initialize PythonExecutor
         # self.shell_executor = ShellExecutor() # Initialize ShellExecutor
         self.message = [
             {"role": "system", "content": self.system_prompt},
             {"role":"user","content":"Hi"},
-            {"role":"assistant","content":"""<<tool_call>>
-            {
-                "tool_name": "user_input",
-                "input": {
-                    "query": "Hi,im your terminal assistant. How can I help you?"
-                }
-            }
-            <<END_TOOL_CALL>>"""},
+            {"role":"assistant","content":"""```json
+{
+    "tool_name": "user_input",
+    "input": {
+        "query": "Hi,im your terminal assistant. How can I help you?"
+    }
+}
+```"""},
             {"role": "user", "content": self.user_prompt}
         ]
         self.terminal = TerminalInterface()
@@ -82,6 +92,10 @@ class executor:
                 self.rate_limiter.wait_if_needed()
 
                 response = self.llm.chat(self.message) # LiteLLMInterface.chat() returns the full response string
+
+                # Log response in development environment
+                if self.environment == "development":
+                    self.logger.info(f"LLM Response: {response}")
 
                 # Streaming is handled within LiteLLMInterface.chat()
                 # and TerminalInterface.process_markdown_chunk()
@@ -152,6 +166,45 @@ class executor:
     #     """Executes the given Python code using the provided execution environment."""
     #     result = exec_env.execute(code)
     #     return result
+
+    def load_environment_config(self):
+        """Load environment configuration from config.json"""
+        try:
+            config_path = os.path.join(os.path.dirname(__file__), '../../../config.json')
+            with open(config_path, "r") as config_file:
+                config = json.load(config_file)
+                return config.get("environment", "production")
+        except Exception as e:
+            
+            return "production"
+
+    def setup_logging(self):
+        """Setup logging for development environment"""
+        try:
+            # Create logs directory if it doesn't exist
+            logs_dir = os.path.join(os.path.dirname(__file__), '../../../logs')
+            os.makedirs(logs_dir, exist_ok=True)
+            
+            # Create a specific logger for executor responses
+            self.logger = logging.getLogger('executor_responses')
+            self.logger.setLevel(logging.INFO)
+            
+            # Remove any existing handlers to avoid duplicates
+            for handler in self.logger.handlers[:]:
+                self.logger.removeHandler(handler)
+            
+            # Add file handler only (no console output)
+            log_file = os.path.join(logs_dir, 'executor_responses.log')
+            file_handler = logging.FileHandler(log_file)
+            file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+            self.logger.addHandler(file_handler)
+            
+            # Suppress LiteLLM's verbose logging
+            logging.getLogger('litellm').setLevel(logging.WARNING)
+            
+            self.logger.info("Development logging enabled for executor responses")
+        except Exception as e:
+            print(f"Warning: Could not setup logging: {e}")
 
 if __name__ == "__main__":
     # e1 = executor("") # Commenting out example usage for now as it might need adjustment

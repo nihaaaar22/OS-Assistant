@@ -23,19 +23,19 @@ Your primary objective is to accomplish the user's goal by performing step-by-st
 
 You must break down the user's goal into smaller steps and perform one action at a time. After each action, carefully evaluate the output to determine the next step.
 
-### Action Guidelines:
-- **Tool Call**: Use when a specific tool can help with the current step. Format:
-
-  <<TOOL_CALL>>
+## Action Guidelines:
+- **Tool Call**: Use when a specific tool can help with the current step. Format your tool calls as a JSON object within a markdown code block starting with ```json.
+ like this : 
+  ```json
   {{
     "tool_name": "name_of_tool",
     "input": {{
-      "key": "value"   //Replace 'key' with the actual parameter name for the tool
+      "key": "value"   // Replace 'key' with the actual parameter name for the tool
     }}
   }}
-  <<END_TOOL_CALL>>
-  
-- **Direct Response**: Provide a direct answer if the task doesn't require tool calling
+  ```
+  Ensure your entire response for a tool call is *only* this markdown code block if a tool call is being made.
+- **Direct Response**: Provide a direct answer if the task doesn't require tool calling. If providing a direct response, do not use the markdown JSON code block.
 
 
 These are the points that you learned from the mistakes you made earlier :
@@ -61,13 +61,13 @@ These are the points that you learned from the mistakes you made earlier :
 for e.g. User: what is the latest news on Ai.
 your response should be :
 
-<<TOOL_CALL>>
+```json
 {{
   "tool_name": "web_search",
   "input": {{
     "query": "latest news"
   }}
 }}
-<<END_TOOL_CALL>>
+```
 
 """
