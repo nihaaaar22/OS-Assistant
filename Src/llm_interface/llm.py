@@ -51,6 +51,7 @@ class LiteLLMInterface:
                 model=self.model_name,
                 messages=messages,
                 stream=True,
+                temperature=0.2,
             )
 
             for chunk in stream_response:
