@@ -48,8 +48,8 @@ class executor:
             {"role":"user","content":"Hi"},
             {"role":"assistant","content":"""```json
 {
-    "tool_name": "user_input",
-    "input": {
+    "tool_name": "get_user_input",
+     "input": {
         "query": "Hi,im your terminal assistant. How can I help you?"
     }
 }
@@ -189,6 +189,9 @@ class executor:
             self.logger = logging.getLogger('executor_responses')
             self.logger.setLevel(logging.INFO)
             
+            # Prevent propagation to parent loggers (this stops console output)
+            self.logger.propagate = False
+            
             # Remove any existing handlers to avoid duplicates
             for handler in self.logger.handlers[:]:
                 self.logger.removeHandler(handler)
@@ -222,4 +225,4 @@ if __name__ == "__main__":
     #     e1.message.append({"role": "user", "content": user_prompt})
     #     # e1.message.append({"role":"user","content":e1.system_prompt})
     #     e1.run()
-    pass # Placeholder if main execution is commented out
+    pass 
