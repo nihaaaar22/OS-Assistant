@@ -9,10 +9,12 @@ from Tools.system_details import get_os_details, get_datetime, get_memory_usage,
 from Tools.userinp import get_user_input
 from Env.python_executor import PythonExecutor
 from Env.shell import ShellExecutor
+from Utils.ter_interface import TerminalInterface
 
 #need to transform it into map of dictionary
 #name : [function : xyz,description : blah bah]
 
+terminal = TerminalInterface()
 
 
 
@@ -20,9 +22,9 @@ def execute_python_code_tool(code: str) -> str:
     """ 
     Prompts for confirmation, then executes the given Python code and returns a formatted result string.
     """
-    user_confirmation = input(f"Do you want to execute this Python code snippet?\n```python\n{code}\n```\n(y/n): ")
+    terminal.code_log(code)
+    user_confirmation = input(f"Do you want to execute this Python code snippet?\n(y/n): ")
     if user_confirmation.lower() != 'y':
-        print("Python code execution skipped by the user.")
         return "User chose not to execute the Python code."
     executor = PythonExecutor()
     result = executor.execute(code)
@@ -48,9 +50,9 @@ def execute_shell_command_tool(command: str) -> str:
     """
     Prompts for confirmation, then executes the given shell command and returns a formatted result string.
     """
-    user_confirmation = input(f"Do you want to execute the shell command: '{command}'? (y/n): ")
+    terminal.code_log(command)
+    user_confirmation = input(f"Do you want to execute the shell command? (y/n): ")
     if user_confirmation.lower() != 'y':
-        print("Shell command execution skipped by the user.")
         return "User chose not to execute the shell command."
     executor = ShellExecutor()
     result = executor.execute(command)
@@ -73,11 +75,13 @@ def call_tool(tool_name, tool_input):
         tool_name (str): Name of the tool to call
         tool_input (dict): Input parameters for the tool
     """
+    
     if tool_name in tools_function_map:
         # Pass the tool_input dictionary as kwargs to the tool function
         return tools_function_map[tool_name](**tool_input)
-    else:
-        return f"This tool is invalid. Please check the tools available in the tool directory"
+    else: raise ValueError(f"This tool is invalid. Please check the tools available in the tool directory")
+    
+        
 
 tools_function_map = {
     "web_loader": load_data,
