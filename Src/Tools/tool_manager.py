@@ -127,17 +127,13 @@ tools_function_map = {
     "execute_shell_command": execute_shell_command_tool,
 }
 
-# print(call_tool("web_loader","https://www.toastmasters.org"))
-# print(call_tool("web_search","manus ai"))
-# print(call_tool("web_loader",{"url":"https://www.toastmasters.org"}))
-# print(call_tool("file_reader",{"file_path":"/Users/niharshettigar/Web Dev Projects/Jsprograms/Arrays.js"}))
 
 if __name__ == "__main__":
     # Test file_writer without the optional 'append' argument
     test_file_path = "test_output.txt"
     test_content = "This is a test."
     try:
-        result = call_tool("file_writer", {"file_path": test_file_path})
+        result = call_tool("get_user_input", {"prompt":"hi user"})
         print(f"file_writer result: {result}")
     except Exception as e:
         print(f"Error: {e}")

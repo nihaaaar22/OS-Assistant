@@ -50,7 +50,7 @@ class executor:
 {
     "tool_name": "get_user_input",
      "input": {
-        "query": "Hi,im your terminal assistant. How can I help you?"
+        "prompt": "Hi,im your terminal assistant. How can I help you?"
     }
 }
 ```"""},
