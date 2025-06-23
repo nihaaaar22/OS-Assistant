@@ -67,19 +67,47 @@ def execute_shell_command_tool(command: str) -> str:
         else:
             return f"Command Output:\n{result['output']}\nError: {result.get('error', 'Unknown error')}"
 
+def verify_tool_input(tool_name, tool_input):
+    """
+    Verifies that tool_input contains all required arguments for the tool as specified in tool_dir.json.
+    Raises ValueError if any required argument is missing or if unexpected arguments are provided.
+    """
+    tool_dir_path = os.path.join(os.path.dirname(__file__), 'tool_dir.json')
+    with open(tool_dir_path, 'r') as f:
+        tools = json.load(f)
+    tool_spec = next((tool for tool in tools if tool['name'] == tool_name), None)
+    if not tool_spec:
+        raise ValueError(f"Tool '{tool_name}' not found in tool_dir.json.")
+    required_args = set(tool_spec.get('arguments', {}).keys())
+    provided_args = set(tool_input.keys())
+    # Check for missing required arguments (ignore optional ones if specified in doc) 
+    missing_args = [
+        arg for arg in required_args
+        if arg not in provided_args and
+        not 'optional' in tool_spec.get('arguments', {}).get(arg, {})
+        
+    ]
+    if missing_args:
+        raise ValueError(f"Missing required arguments for tool '{tool_name}': {missing_args}")
+    # Optionally, check for unexpected arguments
+    unexpected_args = [arg for arg in provided_args if arg not in required_args]
+    if unexpected_args:
+        raise ValueError(f"Unexpected arguments for tool '{tool_name}': {unexpected_args}")
+    return True
+
 def call_tool(tool_name, tool_input):
     """
-    Calls the appropriate tool function with the given input.
-    
+    Calls the appropriate tool function with the given input after verifying input parameters.
     Args:
         tool_name (str): Name of the tool to call
         tool_input (dict): Input parameters for the tool
     """
-    
+    verify_tool_input(tool_name, tool_input)
     if tool_name in tools_function_map:
         # Pass the tool_input dictionary as kwargs to the tool function
         return tools_function_map[tool_name](**tool_input)
-    else: raise ValueError(f"This tool is invalid. Please check the tools available in the tool directory")
+    else:
+        raise ValueError(f"This tool is invalid. Please check the tools available in the tool directory")
     
         
 
@@ -103,6 +131,16 @@ tools_function_map = {
 # print(call_tool("web_search","manus ai"))
 # print(call_tool("web_loader",{"url":"https://www.toastmasters.org"}))
 # print(call_tool("file_reader",{"file_path":"/Users/niharshettigar/Web Dev Projects/Jsprograms/Arrays.js"}))
+
+if __name__ == "__main__":
+    # Test file_writer without the optional 'append' argument
+    test_file_path = "test_output.txt"
+    test_content = "This is a test."
+    try:
+        result = call_tool("file_writer", {"file_path": test_file_path})
+        print(f"file_writer result: {result}")
+    except Exception as e:
+        print(f"Error: {e}")
 
 
 
