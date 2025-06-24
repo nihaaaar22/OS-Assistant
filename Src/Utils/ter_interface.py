@@ -92,15 +92,6 @@ class TerminalInterface:
 
             # Regular markdown content
             else:
-                # Check if we're transitioning from a tool call to regular content
-                # This handles cases where tool calls don't have proper closing backticks
-                if self.inside_tool_call and line_stripped and not line_stripped.startswith("```"):
-                    # We've moved to regular content, so close the tool call
-                    self._display_tool_call_content()
-                    self.console.print("[bold cyan]--------------------------------[/bold cyan]")
-                    self.inside_tool_call = False
-                    self.tool_call_buffer = ""
-                
                 self.console.print(Markdown(line))
 
     def _display_tool_call_content(self):
