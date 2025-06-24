@@ -37,3 +37,6 @@ config.json
 
 #Ignore Userinput
 userinput.py
+
+#Ignore build_and_upload.sh
+build_and_upload.sh
