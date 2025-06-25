@@ -4,6 +4,10 @@
 
 PikoAi powered by the OpenCopilot framework, transforms your terminal into an intelligent assistant. Seamlessly integrate AI into your daily workflow to automate tasks, conduct research, interact with web services, and much more. Stop switching contexts and let your copilot handle the heavy lifting, right from your command line.
 
+Install it using a single pip command
+```bash
+pip install pikoai
+```
 ---
 
 ## ✨ See It In Action!
