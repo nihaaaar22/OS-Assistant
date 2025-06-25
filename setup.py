@@ -3,7 +3,7 @@ from pathlib import Path
 
 setup(
     name="PikoAi",
-    version="0.1.22",
+    version="0.1.27",
     packages=find_packages(where="Src"),
     py_modules=["cli", "OpenCopilot"],
     package_dir={"": "Src"},
@@ -26,8 +26,10 @@ setup(
         "psutil>=5.9.8",
         "inquirer>=3.1.3",
         "litellm",
+        "prompt_toolkit>=3.0.43",
         "PyPDF2",
-        "python-docx"
+        "python-docx",
+        "yaspin==3.1.0"
     ],
     entry_points={
         'console_scripts': [
