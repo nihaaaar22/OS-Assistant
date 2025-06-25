@@ -200,8 +200,8 @@ Examples:
     def run(self):
         """Main conversation loop with enhanced @ command support."""
         print_formatted_text(FormattedText([
-            ('class:title', '🚀 TaskAutomator OpenCopilot'),
-            ('class:subtitle', '\nType "help" for available commands or start with your prompt.\nUse @<file_path> to include files in your context.\n')
+            ('class:title', '🚀PikoAi: Your AI Terminal Companion'),
+            ('class:subtitle', '\nUse @<file_path> to include files in your context.\n')
         ]))
         
         try:
