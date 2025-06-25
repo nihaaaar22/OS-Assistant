@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="https://www.python.org/static/community_logos/python-logo-master-v3-TM.png" alt="Python 3.8+" width="200"/>
-</p>
-
 # OpenCopilot - PikoAi
 
 **Your AI-Powered Command-Line Companion!**
@@ -37,9 +33,17 @@ This demo showcases how OpenCopilot can understand your requests, interact with 
 
 ### **Prerequisites**
 - ![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue)
-- Git
+- Git (if cloning from source)
 
 ### **Installation**
+
+You can install OpenCopilot using pip:
+
+```bash
+pip install pikoai
+```
+
+Alternatively, to install from source:
 
 1.  **Clone the repository:**
     ```bash
