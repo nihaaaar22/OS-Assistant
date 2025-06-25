@@ -2,7 +2,7 @@
 
 **Your AI-Powered Command-Line Companion!**
 
-OpenCopilot, by PikoAi, transforms your terminal into an intelligent assistant. Seamlessly integrate AI into your daily workflow to automate tasks, conduct research, interact with web services, and much more. Stop switching contexts and let your copilot handle the heavy lifting, right from your command line.
+PikoAi powered by the OpenCopilot framework, transforms your terminal into an intelligent assistant. Seamlessly integrate AI into your daily workflow to automate tasks, conduct research, interact with web services, and much more. Stop switching contexts and let your copilot handle the heavy lifting, right from your command line.
 
 ---
 
