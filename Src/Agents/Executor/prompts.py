@@ -56,7 +56,7 @@ These are the points that you learned from the mistakes you made earlier :
 - Continue performing actions until the user's goal is fully achieved. Only then, include 'TASK_DONE' in your response.
 - Do not end the task immediately after a tool call without evaluating its output.
 - The best way to give output is to save it open the file using shell commands.
-- The tool call in json format must be done between the delimiters <<TOOL_CALL>> and <<END_TOOL_CALL>>. This is non-negotiable.
+
 
 for e.g. User: what is the latest news on Ai.
 your response should be :
