@@ -128,7 +128,15 @@ class executor:
         while iteration < self.max_iter and not task_done:
             # Check for tool calls
             response = self.run_inference()
-            tool_call = parse_tool_call(response)
+
+            try:
+                tool_call = parse_tool_call(response)
+            except json.JSONDecodeError as e:
+                
+                self.message.append({"role": "user", "content": f"Error parsing tool call make sure the tool call is in the json format within the delimiters ```json and ```. make sure that the json format is corrent with key value string delimited by double quotes"})
+                continue
+
+            
 
             if tool_call:
                 tool_name = tool_call['tool_name']
