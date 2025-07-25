@@ -1,6 +1,7 @@
 # This file contains the prompts used by the Executor agent.
 
 import platform
+from datetime import datetime
 
 def get_executor_prompt(working_dir: str, tools_details: str) -> str:
     """
@@ -13,6 +14,7 @@ def get_executor_prompt(working_dir: str, tools_details: str) -> str:
 This is important information about the environment:
 Working Directory: {working_dir}
 Operating System: {os_name}
+Current Date and Time: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 
 You have access to the following tools:
 {tools_details}
@@ -24,7 +26,7 @@ Your primary objective is to accomplish the user's goal by performing step-by-st
 You must break down the user's goal into smaller steps and perform one action at a time. After each action, carefully evaluate the output to determine the next step.
 
 ## Action Guidelines:
-- **Tool Call**: Use when a specific tool can help with the current step. Format your tool calls as a JSON object within a markdown code block starting with ```json.
+- **Tool Call**: Use when a specific tool can help with the current step. Format your tool calls as a JSON string within a markdown code block starting with ```json.
  like this : 
   ```json
   {{

@@ -1,5 +1,5 @@
 {
     "working_directory": "/path/to/your/working/directory",
-    "llm_provider": "openai",
-    "model_name": "openai/gpt-3.5-turbo"
+    "llm_provider": "gemini",
+    "model_name": "gemini-2.0-flash"
 }
