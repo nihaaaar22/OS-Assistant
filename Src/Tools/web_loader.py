@@ -103,6 +103,9 @@ def get_clean_content(html, url) -> str:
             f"[{url}] Cleaned page size: {cleaned_size} characters, down from {original_size} (shrunk: {original_size-cleaned_size} chars, {round((1-(cleaned_size/original_size)) * 100, 2)}%)"
         )
 
+    if len(content.split()) > 5000:
+        return "Web page content is too long, please check other sources."
+
     return content
 
 

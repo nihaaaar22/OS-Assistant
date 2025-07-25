@@ -122,6 +122,7 @@ class executor:
         self.run_task()
 
     def run_task(self):
+        prompt_serp_api = False
         iteration = 0
         task_done = False
 
@@ -141,6 +142,8 @@ class executor:
             if tool_call:
                 tool_name = tool_call['tool_name']
                 tool_input = tool_call['input']
+
+                
                 
 
                 # Call the tool and append the result (no confirmation or special logic)
@@ -149,9 +152,12 @@ class executor:
                     if tool_name not in ['execute_python_code', 'execute_shell_command']:
                         self.terminal.tool_output_log(tool_output_result, tool_name)
                     self.message.append({"role": "user", "content": "Tool Output: " + str(tool_output_result)})
-                except ValueError as e:
+                except Exception as e:
                     error_msg = str(e)
+                    if tool_name == "web_search" and isinstance(e, ImportError):
+                        prompt_serp_api = True
                     print(f"Tool Error: {error_msg}")
+                    
                     self.message.append({"role": "user", "content": f"Tool Error: {error_msg}"})
 
             else: # Not a tool call, could be a direct response or requires clarification
@@ -159,7 +165,9 @@ class executor:
 
             # Check if task is done
             if "TASK_DONE" in response:
-                
+                if prompt_serp_api:
+                    print("SerpAPI key is not set. If you dont have a key, please visit https://serpapi.com/ to get a key.")
+                    prompt_serp_api = False
                 task_done = True
 
             else:
