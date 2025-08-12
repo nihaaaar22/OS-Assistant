@@ -9,13 +9,12 @@ from dotenv import load_dotenv
 # Define available models for each provider using litellm compatible strings
 AVAILABLE_MODELS = {
     "openai": [
-        "openai/gpt-3.5-turbo",
-        "openai/gpt-4",
-        "openai/gpt-4-turbo-preview",
         "openai/gpt-4o",
         "openai/gpt-4o-mini",
-        "openai/gpt-4.1-nano",
-        "openai/gpt-4.1-mini"
+        "openai/gpt-4.1-mini",
+        "openai/gpt-5",
+        "openai/gpt-5-mini",
+        "openai/gpt-5-nano"
     ],
     "mistral": [
         "mistral/mistral-tiny",
@@ -26,16 +25,21 @@ AVAILABLE_MODELS = {
     "groq": [
         "groq/llama2-70b-4096", 
         "groq/mixtral-8x7b-32768",
-        "groq/gemma-7b-it"
+        "groq/gemma-7b-it",
+        "groq/openai/gpt-oss-120b",
+        "groq/deepseek-r1-distill-llama-70b"
+
     ],
-    "anthropic": [
-        "anthropic/claude-3-opus-20240229",
-        "anthropic/claude-3-sonnet-20240229",
-        "anthropic/claude-3-haiku-20240307"
+        "anthropic": [
+        "anthropic/claude-3-5-sonnet-20241022",
+        "anthropic/claude-3-5-haiku-20241022",
+        "anthropic/claude-3-7-sonnet-20250219",
+        "anthropic/claude-sonnet-4-20250514" 
     ],
     "gemini": [
         "gemini/gemini-2.0-flash",
-        "gemini/gemini-2.5-flash-preview-05-20"
+        "gemini/gemini-2.5-flash-preview-05-20",
+        "gemini/gemini-2.5-pro"
     ]
 }
 
