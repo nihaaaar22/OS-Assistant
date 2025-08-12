@@ -4,6 +4,60 @@ from PyPDF2 import errors as PyPDF2Errors
 import docx
 from docx.opc import exceptions as DocxOpcExceptions
 
+# Limits for file reading
+MAX_FILE_SIZE_MB = 5
+MAX_TOKENS = 50000  # rough estimate: ~4 chars/token
+MAX_LINES = 1000
+TEXTUAL_EXTENSIONS = {
+    '.txt', '.md', '.csv', '.tsv', '.json', '.yaml', '.yml', '.ini', '.cfg', '.toml',
+    '.py', '.js', '.ts', '.tsx', '.jsx', '.java', '.go', '.rb', '.rs', '.c', '.cpp', '.h', '.hpp',
+    '.css', '.scss', '.sass', '.html', '.xml', '.sh'
+}
+
+
+def _estimate_tokens(text: str) -> int:
+    """Estimate token count from text length."""
+    return max(0, len(text) // 4)
+
+
+def _truncate_to_max_lines(text: str, max_lines: int) -> str:
+    """Return only the first max_lines of text with an ellipsis footer."""
+    lines = text.split('\n')
+    if len(lines) <= max_lines:
+        return text
+    truncated = '\n'.join(lines[:max_lines])
+    return truncated + f"\n\n... (truncated, showing {max_lines} of {len(lines)} lines) ..."
+
+
+def _apply_content_limits(content: str, file_path: str, file_size_mb: float) -> str:
+    """Truncate content if it exceeds token/line limits and add an informative header."""
+    line_count = content.count('\n') + 1
+    estimated_tokens = _estimate_tokens(content)
+    if estimated_tokens > MAX_TOKENS or line_count > MAX_LINES:
+        truncated = _truncate_to_max_lines(content, MAX_LINES)
+        header = (
+            f"=== Content of file: {file_path} (TRUNCATED) ===\n"
+            f"File size: {file_size_mb:.2f} MB | Lines: {line_count} | Estimated tokens: {estimated_tokens}\n"
+            f"Showing first {MAX_LINES} lines due to size limits.\n\n"
+        )
+        return header + truncated
+    return content
+
+
+def _read_text_preview(file_path: str, max_lines: int) -> str:
+    """Stream-read and return the first max_lines lines from a text file."""
+    lines = []
+    line_count = 0
+    with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
+        for line in f:
+            lines.append(line.rstrip('\n'))
+            line_count += 1
+            if line_count >= max_lines:
+                break
+    text = '\n'.join(lines)
+    return text + f"\n\n... (preview only, showing first {max_lines} lines) ..."
+
+
 def file_reader(**kwargs) -> dict:
     """Reads the content of a specified file and returns it.
     
@@ -87,9 +141,21 @@ def file_reader(**kwargs) -> dict:
         if not os.access(file_path, os.R_OK):
             return {"success": False, "output": f"Error: No read permission for '{file_path}'."}
         
+        # Gather basic stats
+        file_size_mb = os.path.getsize(file_path) / (1024 * 1024)
+        
         # Read file content
         content = ""
         if file_extension == ".pdf":
+            # Block very large PDFs to avoid heavy processing
+            if file_size_mb > MAX_FILE_SIZE_MB:
+                return {"success": True, "output": (
+                    f"=== Large file detected: {file_path} ===\n"
+                    f"File size: {file_size_mb:.2f} MB (exceeds {MAX_FILE_SIZE_MB} MB limit)\n"
+                    f"Content not loaded to avoid exceeding context limits.\n"
+                    f"Provide specific pages or request analysis instead.\n"
+                    f"=== End of file info: {file_path} ===\n"
+                )}
             try:
                 with open(file_path, "rb") as f:
                     reader = PdfReader(f)
@@ -105,7 +171,18 @@ def file_reader(**kwargs) -> dict:
                 return {"success": False, "output": f"Error: Could not read PDF file '{file_path}'. It may be corrupted, not a valid PDF, or an unsupported format. Details: {str(pe)}"}
             except Exception as e: # General fallback for other PDF issues
                 return {"success": False, "output": f"Error processing PDF file '{file_path}': {str(e)}"}
+            # Apply content limits post-read
+            content = _apply_content_limits(content, file_path, file_size_mb)
         elif file_extension == ".docx":
+            # Block very large DOCX to avoid heavy processing
+            if file_size_mb > MAX_FILE_SIZE_MB:
+                return {"success": True, "output": (
+                    f"=== Large file detected: {file_path} ===\n"
+                    f"File size: {file_size_mb:.2f} MB (exceeds {MAX_FILE_SIZE_MB} MB limit)\n"
+                    f"Content not loaded to avoid exceeding context limits.\n"
+                    f"Provide specific sections or request analysis instead.\n"
+                    f"=== End of file info: {file_path} ===\n"
+                )}
             try:
                 doc = docx.Document(file_path)
                 for para in doc.paragraphs:
@@ -114,11 +191,24 @@ def file_reader(**kwargs) -> dict:
                 return {"success": False, "output": f"Error: File '{file_path}' is not a valid DOCX file, is corrupted, or is not a compatible OOXML package."}
             except Exception as e: # General fallback for other DOCX issues
                 return {"success": False, "output": f"Error processing DOCX file '{file_path}': {str(e)}"}
+            # Apply content limits post-read
+            content = _apply_content_limits(content, file_path, file_size_mb)
         else: # Fallback to existing plain text reading
-            # Ensure this part also has robust error handling, though it's simpler
             try:
-                with open(file_path, "r", encoding="utf-8") as f:
-                    content = f.read()
+                # If the file is very large, stream a preview of the first MAX_LINES lines
+                if file_size_mb > MAX_FILE_SIZE_MB and (file_extension in TEXTUAL_EXTENSIONS or file_extension == ""):
+                    preview = _read_text_preview(file_path, MAX_LINES)
+                    header = (
+                        f"=== Content of file: {file_path} (PREVIEW) ===\n"
+                        f"File size: {file_size_mb:.2f} MB (exceeds {MAX_FILE_SIZE_MB} MB limit)\n"
+                        f"Showing first {MAX_LINES} lines.\n\n"
+                    )
+                    content = header + preview
+                else:
+                    with open(file_path, "r", encoding="utf-8") as f:
+                        content = f.read()
+                    # Apply content limits post-read
+                    content = _apply_content_limits(content, file_path, file_size_mb)
             except UnicodeDecodeError as ude:
                 return {"success": False, "output": f"Error: Could not decode file '{file_path}' using UTF-8. It might be a binary file or use a different text encoding. Details: {str(ude)}"}
             except Exception as e: # General fallback for text files

@@ -129,7 +129,7 @@ class OpenCopilot:
             
             if os.path.exists(expanded_path):
                 if os.path.isfile(expanded_path):
-                    # Call file_reader to get file content
+                    # Call file_reader to get file content (file_reader handles size/limits)
                     file_read_result = file_reader(file_path=expanded_path)
                     
                     if file_read_result["success"]:
@@ -171,7 +171,8 @@ class OpenCopilot:
 
     def display_help(self):
         """Display help information about available commands."""
-        help_text = """
+        help_text = (
+            """
 🚀 TaskAutomator OpenCopilot Help
 
 Available Commands:
@@ -182,6 +183,9 @@ Available Commands:
   
   quit           - Exit the application
   help           - Show this help message
+
+Notes:
+  - Large files may be previewed or truncated automatically by the file reader.
 
 File Path Completion:
   - Type @ followed by a file path
@@ -195,6 +199,7 @@ Examples:
   @~/documents/data.csv @analysis.py analyze this data using this script
   @config.json @logs/error.log debug the issue in these files
 """
+        )
         print_formatted_text(FormattedText([('class:info', help_text)]))
 
     def run(self):
