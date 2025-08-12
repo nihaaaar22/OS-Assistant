@@ -44,6 +44,10 @@ class LiteLLMInterface:
             print(f"Warning: Error decoding JSON from {config_path}. Defaulting model to gpt-3.5-turbo.")
             return "gpt-3.5-turbo"
 
+    def _get_temperature(self):
+        model_lower = (self.model_name or "").lower()
+        return 1.0 if "gpt-5" in model_lower else 0.2
+
     def chat(self, messages):
         response_content = ""
         try:
@@ -51,7 +55,7 @@ class LiteLLMInterface:
                 model=self.model_name,
                 messages=messages,
                 stream=True,
-                temperature=0.2
+                temperature=self._get_temperature()
             )
 
             for chunk in stream_response:
