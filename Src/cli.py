@@ -108,6 +108,18 @@ def ensure_api_key(provider: str):
 
     api_key = os.getenv(env_var)
     if not api_key:
+        # Provide helpful information about where to get API keys
+        provider_info = {
+            "groq": "Get your free API key from: https://console.groq.com/keys",
+            "gemini": "Get your free API key from: https://aistudio.google.com/",
+            "mistral": "Get your free API key from: https://console.mistral.ai/api-keys/",
+            "openai": "Get your API key from: https://platform.openai.com/api-keys",
+            "anthropic": "Get your API key from: https://console.anthropic.com/"
+        }
+        
+        info_message = provider_info.get(provider, f"Get your {provider.upper()} API key from their official website.")
+        print(f"\n{info_message}\n")
+        
         questions = [ inquirer.Text("api_key", message=f"Enter your {provider.upper()} API key", validate=lambda _, x: len(x.strip()) > 0) ]
         api_key = inquirer.prompt(questions)["api_key"]
         clear_terminal()
